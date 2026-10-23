@@ -164,11 +164,9 @@ export default function Tracking() {
           </div>
         </div>
 
-        {(order.status === 'siap' || isDone) && (
-          <Link to={`/receipt/${order.id}`} style={{ textDecoration: 'none' }}>
-            <button className="btn-outline" style={{ marginTop: 16 }}>Lihat E-Receipt</button>
-          </Link>
-        )}
+        <Link to={`/receipt/${order.id}`} style={{ textDecoration: 'none' }}>
+          <button className="btn-outline" style={{ marginTop: 16 }}>🧾 Lihat E-Receipt</button>
+        </Link>
       </div>
     </div>
   )

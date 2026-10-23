@@ -94,11 +94,11 @@ export default function Checkout() {
     return () => clearInterval(t)
   }, [stage, order])
 
-  // Pembayaran berhasil: kosongkan keranjang lalu ke halaman pelacakan.
+  // Pembayaran berhasil: kosongkan keranjang lalu ke halaman struk.
   useEffect(() => {
     if (stage !== 'success' || !order) return undefined
     clearCart()
-    const t = setTimeout(() => navigate(`/tracking/${order.orderId}`, { replace: true }), 1500)
+    const t = setTimeout(() => navigate(`/receipt/${order.orderId}`, { replace: true }), 1500)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage, order])
@@ -120,7 +120,7 @@ export default function Checkout() {
 
       if (method === 'kasir') {
         clearCart()
-        navigate(`/tracking/${result.orderId}`, { replace: true })
+        navigate(`/receipt/${result.orderId}`, { replace: true })
       } else {
         setStage('qris')
       }
@@ -202,7 +202,7 @@ export default function Checkout() {
             <span className="material-symbols-outlined text-[36px]">check</span>
           </div>
           <h2 className="text-xl font-bold">Pembayaran berhasil!</h2>
-          <p className="text-sm text-on-surface-variant">Mengalihkan ke halaman pelacakan pesanan…</p>
+          <p className="text-sm text-on-surface-variant">Menyiapkan struk pesanan…</p>
         </main>
       </Shell>
     )

@@ -25,6 +25,8 @@ export function useUserProfile() {
     return {
         points: profile?.points ?? 0,
         totalOrders: profile?.totalOrders ?? 0,
+        phone: profile?.phone ?? '',
+        profile,
         loading,
         isLoggedIn: !!user,
     }

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 import { formatRupiah } from '../utils/formatPrice.js'
 import { formatItemOptions } from '../utils/options.js'
 import BottomNav from '../components/BottomNav.jsx'
@@ -7,6 +8,7 @@ import DesktopNav from '../components/DesktopNav.jsx'
 
 const Cart = () => {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { items, removeItem, updateQty, subtotal } = useCart()
 
   return (
@@ -69,7 +71,16 @@ const Cart = () => {
             <span style={{ color: 'var(--color-text-muted)' }}>Subtotal</span>
             <strong style={{ color: 'var(--color-sage-dark)' }}>{formatRupiah(subtotal)}</strong>
           </div>
-          <button className="btn-primary" onClick={() => navigate('/checkout')}>
+          <button
+            className="btn-primary"
+            onClick={() => {
+              if (!user) {
+                navigate('/login', { state: { from: '/checkout', promptSignup: true } })
+              } else {
+                navigate('/checkout')
+              }
+            }}
+          >
             Lanjut ke Pembayaran · {formatRupiah(subtotal)}
           </button>
         </div>

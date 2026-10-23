@@ -72,69 +72,73 @@ function GoogleButton({ onClick }) {
 
 export default function Profile() {
   const navigate = useNavigate()
-  const { user, loading, loginWithGoogle, logout } = useAuth()
-  const { points, totalOrders } = useUserProfile()
+  const { user, loading, logout } = useAuth()
+  const { points, totalOrders, phone } = useUserProfile()
 
   const handleLogout = async () => {
     await logout()
     navigate('/login')
   }
 
-  const displayName = user?.displayName || 'Point People'
+  const displayName = user?.displayName || 'Sahabat Justmine'
 
   /* ---------- Isi per state ---------- */
 
   const loadingView = (
     <div className="flex flex-col items-center gap-3 py-24 text-on-surface-variant">
       <Icon name="progress_activity" className="animate-spin text-4xl text-primary" />
-      <p className="text-sm">Memuat...</p>
+      <p className="text-sm">Memuat profil…</p>
     </div>
   )
 
   const guestView = (
-    <div className="mx-auto max-w-md rounded-2xl border border-outline-variant bg-white p-6 text-center shadow-sm">
+    <div className="mx-auto max-w-md rounded-3xl border border-outline-variant bg-white p-7 text-center shadow-sm">
       <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-surface-container text-primary">
         <Icon name="person" className="text-4xl" />
       </div>
-      <h2 className="font-serif text-3xl font-semibold text-on-surface">Belum masuk</h2>
+      <h2 className="font-serif text-3xl font-semibold text-on-surface">Kartu Member</h2>
       <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
-        Masuk untuk menyimpan poin, riwayat pesanan, dan racikan favoritmu.
+        Daftar atau masuk akun untuk mengaktifkan kartu member, mengumpulkan poin, dan melihat riwayat E-Receipt.
       </p>
-      <div className="mt-6">
-        <GoogleButton onClick={loginWithGoogle} />
+      <div className="mt-6 space-y-2.5">
+        <button
+          type="button"
+          onClick={() => navigate('/login')}
+          className="w-full py-3.5 px-6 rounded-full bg-primary hover:bg-primary-container text-white text-sm font-bold shadow-sm transition-all"
+        >
+          Masuk / Daftar Akun Member
+        </button>
       </div>
-      <p className="mt-4 text-xs text-on-surface-variant">
-        Tanpa masuk pun kamu tetap bisa memesan sebagai tamu.
-      </p>
     </div>
   )
 
   const memberView = (
     <div className="space-y-5">
       {/* Identitas */}
-      <section className="flex items-center gap-4 rounded-2xl border border-outline-variant bg-white p-5 shadow-sm">
+      <section className="flex items-center gap-4 rounded-3xl border border-outline-variant bg-white p-5 shadow-sm">
         <Avatar user={user} />
         <div className="min-w-0">
           <h2 className="truncate font-serif text-2xl font-semibold text-on-surface">{displayName}</h2>
-          {user?.email && <p className="truncate text-sm text-on-surface-variant">{user.email}</p>}
+          {user?.email && <p className="truncate text-xs text-on-surface-variant">{user.email}</p>}
         </div>
       </section>
 
       {/* Poin */}
-      <section className="rounded-2xl bg-[#2E4E3A] p-5 text-white shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-wider text-white/80">Poin Loyalty</p>
+      <section className="rounded-3xl bg-[#2E4E3A] p-5 text-white shadow-sm">
+        <p className="text-xs font-bold uppercase tracking-wider text-white/80">Poin Loyalty Member</p>
         <p className="mt-1 flex items-baseline gap-2 text-white">
           <span className="text-5xl font-extrabold leading-none">{points ?? 0}</span>
           <span className="text-base font-semibold">pts</span>
         </p>
-        <p className="mt-3 text-xs text-white/80">Poin masuk otomatis setelah pesananmu selesai.</p>
+        <p className="mt-3 text-xs text-white/80">Poin masuk otomatis setelah pesanan selesai.</p>
       </section>
 
       {/* Statistik & aksi */}
-      <section className="divide-y divide-outline-variant overflow-hidden rounded-2xl border border-outline-variant bg-white shadow-sm">
+      <section className="divide-y divide-outline-variant overflow-hidden rounded-3xl border border-outline-variant bg-white shadow-sm">
+        <InfoRow icon="call" label="Nomor WhatsApp (ID Kasir)" value={phone || 'Belum diisi'} />
         <InfoRow icon="receipt_long" label="Total Pesanan" value={totalOrders ?? 0} />
-        <InfoRow icon="history" label="Riwayat Pesanan" onClick={() => navigate('/history')} />
-        <InfoRow icon="logout" label="Keluar" onClick={handleLogout} danger />
+        <InfoRow icon="history" label="Riwayat Pesanan & E-Receipt" onClick={() => navigate('/history')} />
+        <InfoRow icon="logout" label="Keluar Akun" onClick={handleLogout} danger />
       </section>
     </div>
   )

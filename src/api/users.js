@@ -1,21 +1,30 @@
 import { doc, getDoc, setDoc, onSnapshot, increment, updateDoc } from 'firebase/firestore'
 import { db } from './firebase.js'
 
-// Dipanggil sekali setiap kali user login — kalau belum ada dokumen profilnya
-// di Firestore (user baru), otomatis dibuatkan dengan poin awal 0.
-export async function ensureUserProfile(user) {
-    if (!user) return
+// Dipanggil saat user login / register.
+// Menyimpan data profil (nama, email, phone, poin awal 0) jika belum ada.
+export async function ensureUserProfile(user, extraData = {}) {
+    if (!user?.uid) return
     const ref = doc(db, 'users', user.uid)
     const snap = await getDoc(ref)
     if (!snap.exists()) {
         await setDoc(ref, {
-            displayName: user.displayName || '',
-            email: user.email || '',
+            displayName: extraData.displayName || user.displayName || '',
+            email: extraData.email || user.email || '',
+            phone: extraData.phone || '',
             photoURL: user.photoURL || '',
             points: 0,
             totalOrders: 0,
             createdAt: new Date().toISOString(),
         })
+    } else {
+        const data = snap.data()
+        const updates = {}
+        if (extraData.phone && !data.phone) updates.phone = extraData.phone
+        if (extraData.displayName && !data.displayName) updates.displayName = extraData.displayName
+        if (Object.keys(updates).length > 0) {
+            await updateDoc(ref, updates).catch(() => {})
+        }
     }
 }
 
@@ -26,6 +35,13 @@ export function listenToUserProfile(uid, callback) {
     return onSnapshot(ref, (snap) => {
         callback(snap.exists() ? snap.data() : null)
     })
+}
+
+// Update nomor telepon user
+export async function updateUserPhone(uid, phone) {
+    if (!uid) return
+    const ref = doc(db, 'users', uid)
+    await updateDoc(ref, { phone })
 }
 
 // Dipanggil setelah order berhasil dibuat, hanya kalau user sedang login.

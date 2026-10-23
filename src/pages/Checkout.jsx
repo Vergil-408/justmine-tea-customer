@@ -60,6 +60,13 @@ export default function Checkout() {
   const [copied, setCopied] = useState(false)
   const requestIdRef = useRef(newRequestId())
 
+  // Arahkan tamu untuk buat akun member terlebih dahulu sebelum checkout
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/login', { state: { from: '/checkout', promptSignup: true } })
+    }
+  }, [authLoading, user, navigate])
+
   // Setelah QRIS dibuat: dengarkan status order secara real-time + cek ke Midtrans tiap beberapa detik
   // (cadangan kalau webhook belum masuk, misalnya saat dites di localhost).
   useEffect(() => {
@@ -211,6 +218,21 @@ export default function Checkout() {
         </main>
       </Shell>
     )
+  }
+
+  if (authLoading) {
+    return (
+      <Shell title="Pembayaran">
+        <main className="max-w-xl mx-auto px-4 py-16 text-center">
+          <div className="w-8 h-8 rounded-full border-2 border-outline-variant border-t-primary animate-spin mx-auto mb-3" />
+          <p className="text-sm text-on-surface-variant">Memeriksa status akun member…</p>
+        </main>
+      </Shell>
+    )
+  }
+
+  if (!user) {
+    return null
   }
 
   /* ---------------- Form ---------------- */

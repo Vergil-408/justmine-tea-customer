@@ -172,7 +172,7 @@ function OrderCard({ order, onRepeat, onTrack, onReceipt, repeating }) {
           Total <span className="text-base font-bold tabular-nums text-on-surface">{rupiah(order.total ?? order.subtotal)}</span>
         </p>
         <div className="flex flex-wrap items-center justify-end gap-2">
-          {!aktif && !dibatalkan && (
+          {!dibatalkan && (
             <button type="button" onClick={() => onReceipt(order)} className={`${btnBase} border border-outline-variant text-on-surface hover:bg-surface-container`}>
               <span className="material-symbols-outlined text-[18px]">receipt_long</span>
               Lihat struk

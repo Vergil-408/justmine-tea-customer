@@ -9,11 +9,6 @@ import { useTable } from '../context/TableContext.jsx'
 import { addGuestOrder } from '../utils/guestOrders.js'
 import { formatItemOptions } from '../utils/options.js'
 
-const METHODS = [
-  { key: 'qris', label: 'QRIS', hint: 'Scan kode QR untuk membayar', icon: 'qr_code_2' },
-  { key: 'kasir', label: 'Bayar di kasir', hint: 'Bayar saat mengambil pesanan', icon: 'payments' },
-]
-
 const SANDBOX_GUIDE = 'https://docs.midtrans.com/docs/testing-payment-on-sandbox'
 const POLL_MS = 5000
 
@@ -111,19 +106,13 @@ export default function Checkout() {
       const result = await requestCreateOrder({
         items,
         tableNumber: table,
-        paymentMethod: method,
+        paymentMethod: 'qris',
         clientRequestId: requestIdRef.current,
         user,
       })
       if (!user) addGuestOrder(result.orderId, result.orderCode) // riwayat & notifikasi tamu
       setOrder(result)
-
-      if (method === 'kasir') {
-        clearCart()
-        navigate(`/receipt/${result.orderId}`, { replace: true })
-      } else {
-        setStage('qris')
-      }
+      setStage('qris')
     } catch (err) {
       setError(err.message)
       if (err.status && err.status < 500 && err.status !== 401) requestIdRef.current = newRequestId()
@@ -290,31 +279,25 @@ export default function Checkout() {
         </section>
 
         <section className={cardCls} aria-label="Metode pembayaran">
-          <h2 className="text-sm font-bold mb-3">Metode pembayaran</h2>
-          <div className="flex flex-col gap-2" role="radiogroup">
-            {METHODS.map((m) => {
-              const on = method === m.key
-              return (
-                <button
-                  key={m.key}
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  onClick={() => setMethod(m.key)}
-                  className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors ${on ? 'bg-secondary-container text-on-secondary-container border-primary' : 'bg-surface-container-lowest border-outline-variant'}`}
-                >
-                  <span className="material-symbols-outlined text-[22px]">{m.icon}</span>
-                  <span className="flex-1">
-                    <span className="block text-sm font-semibold">{m.label}</span>
-                    <span className="block text-xs text-on-surface-variant">{m.hint}</span>
-                  </span>
-                  <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${on ? 'border-primary' : 'border-outline'}`}>
-                    {on && <span className="w-2 h-2 rounded-full bg-primary" />}
-                  </span>
-                </button>
-              )
-            })}
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-bold">Metode Pembayaran</h2>
+            <span className="text-[11px] font-semibold text-primary bg-secondary-container px-2.5 py-0.5 rounded-full">Cashless</span>
           </div>
+          <div className="flex items-center gap-3 rounded-xl border border-primary/40 bg-secondary-container/60 p-3.5">
+            <div className="w-10 h-10 rounded-xl bg-white border border-outline-variant/60 flex items-center justify-center shrink-0 text-primary">
+              <span className="material-symbols-outlined text-[24px]">qr_code_2</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="block text-sm font-bold text-on-surface">QRIS</span>
+              <span className="block text-xs text-on-surface-variant truncate">BCA, GoPay, OVO, Dana, ShopeePay & M-Banking</span>
+            </div>
+            <span className="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center shrink-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-primary" />
+            </span>
+          </div>
+          <p className="text-[11px] text-on-surface-variant mt-2.5">
+            Pesanan langsung diteruskan ke dapur setelah pembayaran QRIS terkonfirmasi.
+          </p>
         </section>
 
         {error && <p role="alert" className="text-sm text-error font-medium">{error}</p>}
@@ -332,9 +315,7 @@ export default function Checkout() {
               ? 'Memproses…'
               : !table
                 ? 'Scan QR meja dulu'
-                : method === 'qris'
-                  ? `Bayar dengan QRIS · ${rupiah(subtotal)}`
-                  : `Pesan · bayar di kasir · ${rupiah(subtotal)}`}
+                : `Bayar dengan QRIS · ${rupiah(subtotal)}`}
           </button>
         </div>
       </div>

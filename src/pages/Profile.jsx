@@ -142,7 +142,7 @@ export default function Profile() {
             <div>
               <p className="text-xs font-bold text-amber-900">Nomor WhatsApp belum terdaftar</p>
               <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
-                Kasir di toko memerlukan nomor HP untuk mencatatkan poin belanjamu saat memesan langsung di outlet.
+                Lengkapi nomor WhatsApp agar akun member kamu aktif dan bisa mengumpulkan poin pesanan.
               </p>
             </div>
           </div>
@@ -179,7 +179,7 @@ export default function Profile() {
       <section className="divide-y divide-outline-variant overflow-hidden rounded-3xl border border-outline-variant bg-white shadow-sm">
         <InfoRow
           icon="call"
-          label="Nomor WhatsApp (ID Kasir)"
+          label="Nomor WhatsApp"
           value={
             phone ? (
               <span className="text-on-surface font-semibold">{phone}</span>
@@ -277,7 +277,7 @@ export default function Profile() {
             </div>
 
             <p className="text-xs text-on-surface-variant leading-relaxed mb-4">
-              Nomor WhatsApp digunakan oleh kasir outlet untuk mencari data member dan mencatat poin belanjamu.
+              Nomor WhatsApp digunakan sebagai identitas member dan mengumpulkan poin belanjamu di Justmine Tea.
             </p>
 
             <form onSubmit={handleSavePhone} noValidate>

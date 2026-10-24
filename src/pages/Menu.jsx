@@ -9,12 +9,15 @@ import MobileHeader from '../components/MobileHeader.jsx'
 import DesktopNav from '../components/DesktopNav.jsx'
 import BottomNav from '../components/BottomNav.jsx'
 import QuantityModal from '../components/QuantityModal.jsx'
+import CustomizeModal from '../components/CustomizeModal.jsx'
 
-// key 'customizable' dipertahankan supaya link lama (?filter=customizable) tetap jalan.
 const filters = [
   { key: 'semua', label: 'Semua' },
-  { key: 'signature', label: 'Signature' },
-  { key: 'customizable', label: 'Bisa dikustomisasi' },
+  { key: 'classic', label: 'Classic Tea' },
+  { key: 'fruit', label: 'Fruit Tea' },
+  { key: 'milktea', label: 'Milk Tea' },
+  { key: 'signature', label: 'Signature Tea' },
+  { key: 'coffee', label: 'Coffee Series' },
 ]
 
 const rupiah = (n) => 'Rp ' + n.toLocaleString('id-ID')
@@ -75,11 +78,14 @@ export default function Menu() {
   const [searchParams] = useSearchParams()
   const initialFilter = searchParams.get('filter')
   const [activeFilter, setActiveFilter] = useState(
-    ['semua', 'signature', 'customizable'].includes(initialFilter) ? initialFilter : 'semua'
+    ['semua', 'classic', 'fruit', 'milktea', 'signature', 'coffee'].includes(initialFilter)
+      ? initialFilter
+      : 'semua'
   )
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('default')
   const [quantityModalItem, setQuantityModalItem] = useState(null)
+  const [customizingItem, setCustomizingItem] = useState(null)
 
   // Per menu: punya opsi? ada pilihan berharga tambahan? (hasil resolveOptions)
   const info = useMemo(() => {
@@ -96,9 +102,7 @@ export default function Menu() {
   const infoOf = (item) => info.get(item.id) ?? { custom: false, hasDelta: false }
 
   const matchesFilter = (item, key) =>
-    key === 'semua' ? true
-    : key === 'customizable' ? infoOf(item).custom
-    : item.category === key
+    key === 'semua' ? true : item.category === key
 
   const filtered = items.filter((item) => {
     const matchSearch = item.name.toLowerCase().includes(search.toLowerCase())
@@ -110,12 +114,11 @@ export default function Menu() {
     : sortBy === 'harga-tinggi' ? [...filtered].sort((a, b) => getBasePrice(b) - getBasePrice(a))
     : filtered
 
-  // Catatan: menambah ke keranjang & checkout tidak wajib login (bisa sebagai tamu).
-  // Menu yang punya opsi -> halaman kustomisasi. Menu tanpa opsi -> pilih jumlah lewat modal.
+  // Saat pelanggan klik menu: jika bisa dikustomisasi, buka bottom sheet CustomizeModal!
   function handleSelect(item) {
     if (!item.inStock) return
     if (groupsLoading) return // tunggu definisi grup supaya tidak salah cabang
-    if (infoOf(item).custom) navigate(`/customize/${item.id}`)
+    if (infoOf(item).custom) setCustomizingItem(item)
     else setQuantityModalItem(item)
   }
 
@@ -248,6 +251,12 @@ export default function Menu() {
         item={quantityModalItem}
         onClose={() => setQuantityModalItem(null)}
         onConfirm={confirmAddPlain}
+      />
+
+      <CustomizeModal
+        item={customizingItem}
+        isOpen={!!customizingItem}
+        onClose={() => setCustomizingItem(null)}
       />
     </div>
   )

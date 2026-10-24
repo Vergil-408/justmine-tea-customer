@@ -10,6 +10,8 @@
 
 // Menu lama (category 'customizable') yang belum punya optionGroupIds
 // dibaca memakai grup-grup ini sampai dimigrasi ke Firestore.
+import { seedOptionGroups } from '../data/optionGroupsData.js'
+
 export const LEGACY_GROUP_IDS = ['es', 'gula', 'susu', 'topping']
 
 export const getBasePrice = (item) => item?.basePrice ?? item?.price ?? 0
@@ -18,7 +20,7 @@ export const getBasePrice = (item) => item?.basePrice ?? item?.price ?? 0
 
 function pickDefault(group, override, choices) {
   if (group.type !== 'single' || group.ui === 'note') return null
-  const wanted = override.defaultChoiceId ?? group.defaultChoiceId
+  const wanted = override?.defaultChoiceId ?? group.defaultChoiceId
   const hit = choices.find((c) => c.id === wanted && c.available)
   if (hit) return hit.id
   if (group.required) return choices.find((c) => c.available)?.id ?? null
@@ -26,26 +28,29 @@ function pickDefault(group, override, choices) {
 }
 
 // Menggabungkan optionGroupIds (urutan tampil) + optionOverrides.
-// Hasil kosong = menu tanpa opsi. showIf TIDAK dievaluasi di sini
-// (itu bergantung pada pilihan user), jadi `.length > 0` aman dipakai untuk percabangan.
+// Hasil selalu memiliki opsi gula & es untuk minuman apa pun dari database.
 export function resolveOptions(item, groups = []) {
   if (!item || item.customizable === false) return []
 
-  let ids = Array.isArray(item.optionGroupIds) ? item.optionGroupIds : null
+  const effectiveGroups = groups && groups.length > 0 ? groups : seedOptionGroups
+
+  let ids = Array.isArray(item.optionGroupIds) && item.optionGroupIds.length > 0 ? item.optionGroupIds : null
   if (!ids) {
-    if (item.category === 'classic' || item.category === 'coffee') {
+    const cat = String(item.category || '').toLowerCase()
+    if (cat === 'classic' || cat === 'original' || cat === 'coffee') {
       ids = ['gula', 'es', 'catatan']
     } else {
       ids = ['gula', 'es', 'topping', 'catatan']
     }
   }
 
-  const byId = new Map(groups.map((g) => [g.id, g]))
+  const byId = new Map(effectiveGroups.map((g) => [g.id, g]))
+  const fallbackById = new Map(seedOptionGroups.map((g) => [g.id, g]))
   const overrides = item.optionOverrides ?? {}
   const out = []
 
   for (const gid of ids) {
-    const g = byId.get(gid)
+    const g = byId.get(gid) || fallbackById.get(gid)
     if (!g || g.active === false) continue
     const ov = overrides[gid] ?? {}
     const hidden = new Set(ov.hiddenChoiceIds ?? [])

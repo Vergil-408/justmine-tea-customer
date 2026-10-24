@@ -80,16 +80,50 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
   if (!isOpen || !item) return null
 
   // Pisahkan grup opsi: Gula, Es, Topping, Catatan
-  const sugarGroup = resolved.find((g) => g.id === 'gula')
-  const iceGroup = resolved.find((g) => g.id === 'es')
-  // Topping hanya muncul jika ada di resolved options item tersebut (Classic series tidak ada topping)
-  const toppingGroup = resolved.find(
-    (g) => g.id === 'topping' || g.id === 'topping_tea' || g.type === 'multi'
+  const sugarGroup = resolved.find((g) => g.id === 'gula') || {
+    id: 'gula',
+    label: 'Tingkat Kemanisan',
+    choices: [
+      { id: 'normal', label: 'Normal (100%)', priceDelta: 0 },
+      { id: 'less', label: 'Sedikit (50%)', priceDelta: 0 },
+      { id: 'no', label: 'Tanpa Gula (0%)', priceDelta: 0 },
+    ],
+  }
+  const iceGroup = resolved.find((g) => g.id === 'es') || {
+    id: 'es',
+    label: 'Tingkat Es Batu',
+    choices: [
+      { id: 'normal', label: 'Normal Ice', priceDelta: 0 },
+      { id: 'less', label: 'Sedikit Es', priceDelta: 0 },
+      { id: 'no', label: 'Tanpa Es', priceDelta: 0 },
+    ],
+  }
+  const isOriginalOrClassic = ['classic', 'original'].includes(
+    String(item.category || '').toLowerCase()
   )
+  const toppingGroup = !isOriginalOrClassic
+    ? resolved.find((g) => g.id === 'topping' || g.id === 'topping_tea' || g.type === 'multi') || {
+        id: 'topping',
+        label: 'Topping Tambahan',
+        type: 'multi',
+        choices: [
+          { id: 'top-boba', label: 'Pearl / Boba', priceDelta: 3000 },
+          { id: 'top-grass', label: 'Grass Jelly', priceDelta: 3000 },
+          { id: 'top-nata', label: 'Nata de Coco', priceDelta: 3000 },
+          { id: 'top-aloe', label: 'Aloe Vera', priceDelta: 4000 },
+        ],
+      }
+    : null
 
   // Hitung harga per cup
-  const selectedOptions = buildSelectedOptions(resolved, fullSelection)
-  const unitPrice = computeUnitPrice(item, selectedOptions)
+  const selectedToppings = (toppingGroup && Array.isArray(rawSelection[toppingGroup.id]))
+    ? rawSelection[toppingGroup.id]
+    : []
+  const toppingDelta = selectedToppings.reduce((sum, tid) => {
+    const c = toppingGroup?.choices.find((ch) => ch.id === tid)
+    return sum + (c?.priceDelta ?? 0)
+  }, 0)
+  const unitPrice = getBasePrice(item) + toppingDelta
   const grandTotal = unitPrice * qty
 
   // Handlers pilihan
@@ -116,10 +150,54 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
   }
 
   function handleAddToCart() {
-    const { valid, errors } = validateSelection(resolved, fullSelection)
-    if (!valid) {
-      alert(errors[0]?.message || 'Lengkapi kustomisasi pilihan.')
-      return
+    const sugarChoice =
+      sugarGroup?.choices.find((c) => (rawSelection.gula || []).includes(c.id)) ||
+      sugarGroup?.choices[0]
+    const iceChoice =
+      iceGroup?.choices.find((c) => (rawSelection.es || []).includes(c.id)) ||
+      iceGroup?.choices[0]
+
+    const customOptions = [
+      {
+        groupId: 'gula',
+        groupLabel: 'Tingkat Kemanisan',
+        choiceId: sugarChoice?.id || 'normal',
+        choiceLabel: sugarChoice?.label || 'Normal (100%)',
+        priceDelta: 0,
+      },
+      {
+        groupId: 'es',
+        groupLabel: 'Tingkat Es Batu',
+        choiceId: iceChoice?.id || 'normal',
+        choiceLabel: iceChoice?.label || 'Normal Ice',
+        priceDelta: 0,
+      },
+    ]
+
+    // Toppings
+    if (toppingGroup && Array.isArray(rawSelection[toppingGroup.id])) {
+      for (const tid of rawSelection[toppingGroup.id]) {
+        const topChoice = toppingGroup.choices.find((c) => c.id === tid)
+        if (topChoice) {
+          customOptions.push({
+            groupId: 'topping',
+            groupLabel: 'Topping',
+            choiceId: topChoice.id,
+            choiceLabel: topChoice.label,
+            priceDelta: topChoice.priceDelta || 0,
+          })
+        }
+      }
+    }
+
+    if (note.trim()) {
+      customOptions.push({
+        groupId: 'catatan',
+        groupLabel: 'Catatan',
+        choiceId: 'note',
+        choiceLabel: note.trim().slice(0, 80),
+        priceDelta: 0,
+      })
     }
 
     setAddedAnimation(true)
@@ -130,13 +208,13 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
       price: unitPrice,
       qty,
       type: 'custom',
-      selectedOptions,
+      selectedOptions: customOptions,
     })
 
     setTimeout(() => {
       setAddedAnimation(false)
       onClose()
-    }, 700)
+    }, 500)
   }
 
   const basePrice = getBasePrice(item)
@@ -280,7 +358,7 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
 
                 <div className="grid grid-cols-3 gap-2">
                   {sugarGroup.choices.map((c) => {
-                    const picked = (selection.gula || []).includes(c.id)
+                    const picked = (rawSelection.gula || ['normal']).includes(c.id)
                     const icon = CHOICE_ICONS[c.id] || 'water_drop'
                     return (
                       <button
@@ -320,7 +398,7 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
 
                 <div className="grid grid-cols-3 gap-2">
                   {iceGroup.choices.map((c) => {
-                    const picked = (selection.es || []).includes(c.id)
+                    const picked = (rawSelection.es || ['normal']).includes(c.id)
                     const icon = CHOICE_ICONS[c.id] || CHOICE_ICONS[`es_${c.id}`] || 'ac_unit'
                     return (
                       <button
@@ -360,7 +438,7 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {toppingGroup.choices.map((c) => {
-                    const picked = (selection[toppingGroup.id] || []).includes(c.id)
+                    const picked = (rawSelection[toppingGroup.id] || []).includes(c.id)
                     const icon = CHOICE_ICONS[c.id] || 'bubble_chart'
                     return (
                       <button

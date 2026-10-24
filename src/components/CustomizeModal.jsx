@@ -264,7 +264,7 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
         {/* Content Body: Split 2 Kolom di Desktop, Stack di Mobile */}
         <div className="overflow-y-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 pb-28">
           {/* ================= KIRI: DETAIL PRODUK & FOTO ================= */}
-          <div className="lg:col-span-5 flex flex-col gap-3">
+          <div className="lg:col-span-5 flex flex-col gap-3 min-w-0">
             {/* Foto Produk dengan Badges */}
             <div className="relative w-full aspect-[4/3] rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm bg-surface-container">
               <img
@@ -298,10 +298,10 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
             </div>
 
             {/* Nama & Deskripsi */}
-            <div className="bg-surface-container-lowest rounded-2xl p-4 border border-outline-variant/40 flex flex-col gap-1.5 shadow-xs">
+            <div className="bg-surface-container-lowest rounded-2xl p-4 border border-outline-variant/40 flex flex-col gap-1.5 shadow-xs min-w-0 overflow-hidden">
               <div className="flex items-start justify-between gap-2">
-                <div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-on-surface leading-tight">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-xl sm:text-2xl font-bold text-on-surface leading-tight break-words">
                     {item.name}
                   </h3>
                   <p className="text-xs text-secondary font-medium mt-0.5">
@@ -316,7 +316,7 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
                 </div>
               </div>
 
-              <p className="text-xs text-on-surface-variant leading-relaxed mt-1">
+              <p className="text-xs text-on-surface-variant leading-relaxed mt-1 break-words [overflow-wrap:anywhere]">
                 {item.desc || 'Seduhan artisan daun teh alami dengan racikan segar pilihan.'}
               </p>
 
@@ -339,7 +339,7 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
           </div>
 
           {/* ================= KANAN: STEP RACIKAN KUSTOMISASI ================= */}
-          <div className="lg:col-span-7 flex flex-col gap-4">
+          <div className="lg:col-span-7 flex flex-col gap-4 min-w-0">
             {/* STEP 1: Tingkat Kemanisan */}
             {sugarGroup && (
               <div className="bg-surface-container-lowest rounded-2xl p-4 border border-outline-variant/50 shadow-xs flex flex-col gap-2.5">

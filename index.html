@@ -18,32 +18,31 @@
       theme: {
         extend: {
           colors: {
-            background: '#FAF7F0',
-            surface: '#FAF7F0',
-            'surface-container-lowest': '#FFFFFF',   // card: putih, biar kepisah dari background
-            'surface-container-low': '#F3F0E6',      // netral hangat, bukan hijau lagi
-            'surface-container': '#ECE8DA',
-            'surface-container-high': '#E3DDC9',
-            'on-surface': '#1F2A24',
-            'on-surface-variant': '#5F665F',
-            outline: '#72796F',
-            'outline-variant': '#D5D8CC',
+            background: '#FFFFFF',                   // Bersih putih modern
+            surface: '#FFFFFF',
+            'surface-container-lowest': '#FFFFFF',   // Card: Putih bersih
+            'surface-container-low': '#F8F9FA',      // Netral sangat lembut
+            'surface-container': '#F1F3F5',          // Abu-abu terang elegan
+            'surface-container-high': '#E9ECEF',     // Divider / Border lembut
+            'on-surface': '#111827',                 // Teks gelap tegas & terbaca jelas
+            'on-surface-variant': '#4B5563',         // Muted text slate abu
+            outline: '#9CA3AF',
+            'outline-variant': '#E5E7EB',            // Border tipis bersih modern
 
-            primary: '#2E4E3A',            // hijau tua: tombol utama, header, badge meja
-            'on-primary': '#FFFFFF',       // kontras ~9:1
-            'primary-container': '#1B3826',
-            'primary-fixed': '#DCE7DA',    // sage pucat buat chip/selected state
+            primary: '#1E3A2F',                      // Deep botanical green mewah
+            'on-primary': '#FFFFFF',                 // Kontras tinggi
+            'primary-container': '#264B3C',
+            'primary-fixed': '#E8F3ED',              // Sage lembut untuk badge
 
-            secondary: '#5B8C5A',          // hijau tengah: ikon, state aktif, bukan tombol bertulisan putih
-            'secondary-container': '#EAF2EA',
-            'on-secondary-container': '#2E4E3A',
+            secondary: '#366A4E',                    // Hijau daun teh elegan
+            'secondary-container': '#EDF5EF',
+            'on-secondary-container': '#1E3A2F',
 
-            tertiary: '#C9A24B',           // emas jasmine: harga, badge promo, CTA sekunder
-            'tertiary-fixed': '#FBEBC8',
-            'on-tertiary-fixed': '#251A04',
+            tertiary: '#A1701F',                     // Emas teh melati
+            'tertiary-fixed': '#FEF7EA',
+            'on-tertiary-fixed': '#2B1C04',
 
-            error: '#BA1A1A',
-            // skala tea boleh tetap
+            error: '#DC2626',
           },
           fontFamily: {
             sans: ['Plus Jakarta Sans', 'sans-serif'],
@@ -56,10 +55,8 @@
   <style>
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
-      background-color: #FBF8EF;
-      background-image:
-        radial-gradient(circle at 1px 1px, rgba(91, 140, 90, 0.04) 1px, transparent 0);
-      background-size: 24px 24px;
+      background-color: #FFFFFF;
+      color: #111827;
     }
 
     .material-symbols-outlined {

@@ -63,24 +63,37 @@ export default function Home() {
         </section>
 
         {/* Banner musiman */}
-        <section className="relative overflow-hidden rounded-3xl border border-outline-variant/40 bg-gradient-to-r from-tertiary-fixed via-surface-container to-surface-container-low p-5 sm:p-8 lg:p-12">
-          <div className="grid grid-cols-12 gap-4 items-center">
-            <div className="col-span-7 lg:col-span-8 space-y-2 lg:space-y-4 relative z-10">
-              <span className="inline-block text-[11px] font-bold tracking-wide text-tertiary bg-surface-container-lowest/80 px-2.5 py-1 rounded-full">
+        <section className="relative overflow-hidden rounded-3xl border border-outline-variant/60 bg-surface-container-low/40 p-6 sm:p-8 lg:p-10 shadow-xs">
+          <div className="grid grid-cols-12 gap-6 items-center">
+            <div className="col-span-12 sm:col-span-7 lg:col-span-8 space-y-3 relative z-10">
+              <span className="inline-block text-[11px] font-bold tracking-wider text-primary bg-primary-fixed px-3 py-1 rounded-full uppercase">
                 Seasonal Pour
               </span>
-              <h2 className="font-serif text-3xl lg:text-5xl font-semibold text-on-surface leading-tight">Jasmine Bloom</h2>
-              <p className="text-xs sm:text-base text-on-surface-variant max-w-md leading-snug lg:leading-relaxed">
-                Wangi melati yang lembut berpadu krim nabati, hanya untuk musim ini.
+              <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-semibold text-on-surface leading-tight">
+                Jasmine Bloom
+              </h2>
+              <p className="text-xs sm:text-base text-on-surface-variant max-w-md leading-relaxed">
+                Wangi melati yang lembut berpadu krim nabati, hanya untuk musim ini. Menghadirkan keseimbangan rasa floral yang menenangkan.
               </p>
-              <Link to="/menu" className="inline-flex items-center gap-1 text-sm font-semibold text-primary-container hover:text-tertiary transition-colors pt-1">
+              <Link to="/menu" className="inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline transition-all pt-1">
                 Jelajahi menu
                 <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
               </Link>
             </div>
-            <div className="col-span-5 lg:col-span-4 flex justify-end">
-              {/* TODO: ganti dengan foto Jasmine Bloom dari Firestore */}
-              <Photo alt="Jasmine Bloom" className="w-full max-w-[220px] aspect-square rounded-2xl shadow-md" />
+            <div className="col-span-12 sm:col-span-5 lg:col-span-4 flex justify-center sm:justify-end">
+              <div className="relative w-full max-w-[260px] aspect-square rounded-2xl overflow-hidden shadow-md border border-outline-variant/50 group">
+                <img
+                  src="https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=600&q=80"
+                  alt="Jasmine Bloom"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent flex items-end p-3">
+                  <span className="text-white text-xs font-bold tracking-wide flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[15px]">local_cafe</span>
+                    Signature Pour
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </section>

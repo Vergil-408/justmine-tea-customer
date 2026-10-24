@@ -35,7 +35,14 @@ const Cart = () => {
               <div key={item.cartId} className="card" style={{ marginBottom: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                   <div style={{ minWidth: 0 }}>
-                    <strong style={{ fontSize: 14 }}>{item.name}</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <strong style={{ fontSize: 14 }}>{item.name}</strong>
+                      {item.isBundle && (
+                        <span style={{ fontSize: 10, background: '#e8f3ed', color: '#316342', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>
+                          Bundling
+                        </span>
+                      )}
+                    </div>
                     {formatItemOptions(item) && (
                       <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: '4px 0 0' }}>
                         {formatItemOptions(item)}

@@ -49,7 +49,14 @@ export default function CartSheet() {
                                     <div key={item.cartId} className="bg-surface-container-lowest rounded-2xl border border-outline-variant/50 p-3.5 shadow-sm">
                                         <div className="flex justify-between gap-2">
                                             <div className="min-w-0">
-                                                <h3 className="text-sm font-semibold truncate">{item.name}</h3>
+                                                <div className="flex items-center gap-1.5">
+                                                    <h3 className="text-sm font-semibold truncate">{item.name}</h3>
+                                                    {item.isBundle && (
+                                                        <span className="bg-[#316342]/10 text-[#316342] text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0">
+                                                            Bundling
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 {optionsText && (
                                                     <p className="text-xs text-on-surface-variant mt-0.5">{optionsText}</p>
                                                 )}

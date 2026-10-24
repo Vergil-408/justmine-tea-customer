@@ -13,7 +13,9 @@ export function CartProvider({ children }) {
   // teh sama dengan pilihan berbeda = baris berbeda, pilihan sama = qty bertambah.
   function addItem(item) {
     const selectedOptions = item.selectedOptions ?? []
-    const cartId = lineKey(item.id, selectedOptions)
+    const cartId = item.isBundle
+      ? lineKey(item.id, [], item.bundleSlots)
+      : lineKey(item.id, selectedOptions)
     const qty = item.qty ?? 1
     setItems((prev) => {
       const hit = prev.find((i) => i.cartId === cartId)
@@ -26,7 +28,9 @@ export function CartProvider({ children }) {
           ...item,
           qty,
           selectedOptions,
-          type: item.type ?? (selectedOptions.length > 0 ? 'custom' : 'signature'),
+          bundleSlots: item.bundleSlots ?? null,
+          isBundle: !!item.isBundle,
+          type: item.type ?? (item.isBundle ? 'bundle' : selectedOptions.length > 0 ? 'custom' : 'signature'),
           detail: null, // field lama; dikosongkan supaya pembaca lama tidak crash
           cartId,
         },

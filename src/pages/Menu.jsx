@@ -10,9 +10,12 @@ import DesktopNav from '../components/DesktopNav.jsx'
 import BottomNav from '../components/BottomNav.jsx'
 import QuantityModal from '../components/QuantityModal.jsx'
 import CustomizeModal from '../components/CustomizeModal.jsx'
+import BundleModal from '../components/BundleModal.jsx'
+import { seedBundles } from '../data/bundlesData.js'
 
 const filters = [
   { key: 'semua', label: 'Semua' },
+  { key: 'bundling', label: '🎁 Paket Bundling' },
   { key: 'classic', label: 'Classic Tea' },
   { key: 'fruit', label: 'Fruit Tea' },
   { key: 'milktea', label: 'Milk Tea' },
@@ -21,6 +24,56 @@ const filters = [
 ]
 
 const rupiah = (n) => 'Rp ' + n.toLocaleString('id-ID')
+
+function BundleCard({ bundle, onSelect }) {
+  return (
+    <article
+      onClick={() => onSelect(bundle)}
+      className="bg-surface-container-lowest rounded-2xl lg:rounded-3xl border-2 border-[#316342]/30 shadow-sm hover:shadow-lg transition-all p-3 flex flex-col justify-between cursor-pointer group relative overflow-hidden"
+    >
+      <div className="absolute top-3 left-3 z-10">
+        <span className="bg-[#316342] text-white text-[10px] lg:text-xs font-black px-2.5 py-1 rounded-full shadow-md tracking-wide">
+          {bundle.badge}
+        </span>
+      </div>
+
+      <div>
+        <div className="relative rounded-xl lg:rounded-2xl overflow-hidden mb-2.5">
+          <Photo src={bundle.imageUrl} alt={bundle.name} className="w-full h-32 lg:h-44 group-hover:scale-105 transition-transform duration-300" />
+        </div>
+        <div className="px-1">
+          <span className="text-[10px] font-bold text-[#316342] uppercase tracking-wider block">
+            {bundle.slots?.length || 2} Minuman Pilihan
+          </span>
+          <h2 className="font-serif text-base lg:text-xl font-bold leading-tight text-on-surface mt-0.5">
+            {bundle.name}
+          </h2>
+          <p className="text-[11px] lg:text-sm text-on-surface-variant leading-snug line-clamp-2 mt-1">
+            {bundle.desc}
+          </p>
+        </div>
+      </div>
+
+      <div className="px-1 pt-3 pb-0.5 flex items-center justify-between gap-2 border-t border-outline-variant/30 mt-2">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm lg:text-lg font-black text-[#316342]">{rupiah(bundle.price)}</span>
+            <span className="text-[11px] line-through text-on-surface-variant/70">{rupiah(bundle.originalPrice)}</span>
+          </div>
+          <span className="text-[10px] font-semibold text-[#316342]">Hemat {rupiah(bundle.savings)}</span>
+        </div>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onSelect(bundle) }}
+          className="px-3 py-1.5 lg:px-4 lg:py-2 rounded-xl bg-[#316342] hover:bg-[#285237] text-white text-xs lg:text-sm font-bold flex items-center gap-1 shadow-sm active:scale-95 transition-transform"
+        >
+          <span className="material-symbols-outlined text-[16px]">tune</span>
+          <span>Pilih</span>
+        </button>
+      </div>
+    </article>
+  )
+}
 
 function Photo({ src, alt, grayscale, className = '' }) {
   if (src) return <img src={src} alt={alt} loading="lazy" className={`object-cover ${grayscale ? 'grayscale' : ''} ${className}`} />
@@ -78,7 +131,7 @@ export default function Menu() {
   const [searchParams] = useSearchParams()
   const initialFilter = searchParams.get('filter')
   const [activeFilter, setActiveFilter] = useState(
-    ['semua', 'classic', 'fruit', 'milktea', 'signature', 'coffee'].includes(initialFilter)
+    ['semua', 'bundling', 'classic', 'fruit', 'milktea', 'signature', 'coffee'].includes(initialFilter)
       ? initialFilter
       : 'semua'
   )
@@ -86,6 +139,7 @@ export default function Menu() {
   const [sortBy, setSortBy] = useState('default')
   const [quantityModalItem, setQuantityModalItem] = useState(null)
   const [customizingItem, setCustomizingItem] = useState(null)
+  const [customizingBundle, setCustomizingBundle] = useState(null)
 
   // Per menu: punya opsi? ada pilihan berharga tambahan? (hasil resolveOptions)
   const info = useMemo(() => {
@@ -173,7 +227,7 @@ export default function Menu() {
           <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {filters.map((f) => {
               const active = activeFilter === f.key
-              const count = items.filter((i) => matchesFilter(i, f.key)).length
+              const count = f.key === 'bundling' ? seedBundles.length : items.filter((i) => matchesFilter(i, f.key)).length
               return (
                 <button
                   key={f.key}
@@ -196,30 +250,74 @@ export default function Menu() {
           <p className="text-[11px] lg:text-xs text-on-surface-variant mb-3">Menampilkan data contoh — belum ada data dari App Kasir.</p>
         )}
 
-        {visible.length === 0 ? (
-          <div className="text-center py-16 text-on-surface-variant">
-            <span className="material-symbols-outlined text-[40px] text-outline">search_off</span>
-            <p className="mt-2 text-sm">Belum ada menu yang cocok dengan pencarianmu.</p>
-            <button
-              type="button"
-              onClick={() => { setSearch(''); setActiveFilter('semua') }}
-              className="mt-3 text-sm font-semibold text-primary-container underline underline-offset-4"
-            >
-              Tampilkan semua menu
-            </button>
-          </div>
-        ) : (
-          <section aria-label="Daftar menu teh" className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 lg:gap-6">
-            {visible.map((item) => (
-              <MenuCard
-                key={item.id}
-                item={item}
-                custom={infoOf(item).custom}
-                hasDelta={infoOf(item).hasDelta}
-                onSelect={handleSelect}
-              />
-            ))}
+        {/* View khusus tab 'bundling' */}
+        {activeFilter === 'bundling' ? (
+          <section aria-label="Daftar paket bundling">
+            <div className="mb-4">
+              <h2 className="font-serif text-xl sm:text-2xl font-bold text-on-surface">Paket Bundling Spesial 🎁</h2>
+              <p className="text-xs sm:text-sm text-on-surface-variant">Pesan paket lebih hemat, rasa & manis tetap bisa diatur per cup.</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {seedBundles
+                .filter((b) => !search || b.name.toLowerCase().includes(search.toLowerCase()) || b.desc.toLowerCase().includes(search.toLowerCase()))
+                .map((b) => (
+                  <BundleCard key={b.id} bundle={b} onSelect={setCustomizingBundle} />
+                ))}
+            </div>
           </section>
+        ) : (
+          <>
+            {/* Promo Carousel/Grid Bundling di Tab 'Semua' */}
+            {activeFilter === 'semua' && !search && (
+              <section className="mb-8 p-4 rounded-3xl bg-surface-container-low/60 border border-outline-variant/40">
+                <div className="flex items-center justify-between mb-3.5">
+                  <div>
+                    <span className="text-[11px] font-bold text-[#316342] uppercase tracking-wider block">Promo Hemat</span>
+                    <h2 className="font-serif text-lg lg:text-2xl font-bold text-on-surface">Paket Bundling Lebih Hemat 🎁</h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveFilter('bundling')}
+                    className="text-xs font-bold text-[#316342] hover:underline flex items-center gap-0.5"
+                  >
+                    Lihat Semua ({seedBundles.length})
+                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                  {seedBundles.slice(0, 3).map((b) => (
+                    <BundleCard key={b.id} bundle={b} onSelect={setCustomizingBundle} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {visible.length === 0 ? (
+              <div className="text-center py-16 text-on-surface-variant">
+                <span className="material-symbols-outlined text-[40px] text-outline">search_off</span>
+                <p className="mt-2 text-sm">Belum ada menu yang cocok dengan pencarianmu.</p>
+                <button
+                  type="button"
+                  onClick={() => { setSearch(''); setActiveFilter('semua') }}
+                  className="mt-3 text-sm font-semibold text-primary-container underline underline-offset-4"
+                >
+                  Tampilkan semua menu
+                </button>
+              </div>
+            ) : (
+              <section aria-label="Daftar menu teh" className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 lg:gap-6">
+                {visible.map((item) => (
+                  <MenuCard
+                    key={item.id}
+                    item={item}
+                    custom={infoOf(item).custom}
+                    hasDelta={infoOf(item).hasDelta}
+                    onSelect={handleSelect}
+                  />
+                ))}
+              </section>
+            )}
+          </>
         )}
       </main>
 
@@ -257,6 +355,18 @@ export default function Menu() {
         item={customizingItem}
         isOpen={!!customizingItem}
         onClose={() => setCustomizingItem(null)}
+      />
+
+      <BundleModal
+        bundle={customizingBundle}
+        menuItems={items}
+        cartItemCount={cartCount}
+        onClose={() => setCustomizingBundle(null)}
+        onAddToCart={(bundleItem) => {
+          addItem(bundleItem)
+          setCustomizingBundle(null)
+          openCartSheet()
+        }}
       />
     </div>
   )

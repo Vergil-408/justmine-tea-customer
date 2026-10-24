@@ -26,7 +26,13 @@ export async function requestCreateOrder({ items, tableNumber, paymentMethod, cl
   return postJson(
     '/api/create-order',
     {
-      items: items.map((i) => ({ id: i.id, qty: i.qty, selectedOptions: i.selectedOptions || [] })),
+      items: items.map((i) => ({
+        id: i.id,
+        qty: i.qty,
+        selectedOptions: i.selectedOptions || [],
+        isBundle: !!i.isBundle,
+        bundleSlots: i.bundleSlots || null,
+      })),
       tableNumber,
       paymentMethod,
       clientRequestId,

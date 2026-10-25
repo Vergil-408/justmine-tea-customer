@@ -32,18 +32,44 @@ export default function Tracking() {
     return () => unsub()
   }, [orderId])
 
-  // Hitung posisi antrean: pesanan lain yang masih menunggu/diproses & dibuat lebih dulu
+  // Hitung posisi antrean: pesanan lain yang masih menunggu/diproses berdasarkan urutan kronologis submit (FIFO)
   useEffect(() => {
     if (!order) return
     const q = query(
       collection(db, 'orders'),
-      where('status', 'in', ['menunggu', 'diproses']),
-      orderBy('createdAt', 'asc')
+      where('status', 'in', ['menunggu', 'diproses'])
     )
     const unsub = onSnapshot(q, (snap) => {
-      const ids = snap.docs.map((d) => d.id)
-      const idx = ids.indexOf(order.id)
-      setQueuePosition(idx >= 0 ? idx + 1 : null)
+      const getTimestamp = (d) => {
+        const val = d.createdAt || d.submittedAt
+        if (val?.toDate) return val.toDate().getTime()
+        if (val instanceof Date) return val.getTime()
+        if (typeof val === 'number') return val
+        if (typeof val === 'string') {
+          const parsed = Date.parse(val)
+          if (!isNaN(parsed)) return parsed
+        }
+        // Fallback ke waktu sekarang agar pesanan baru tidak menempati nomor 1 di depan pesanan yang sudah ada
+        return Date.now()
+      }
+
+      const activeList = snap.docs.map((docSnap) => {
+        const data = docSnap.data()
+        return {
+          id: docSnap.id,
+          orderCode: data.orderCode || '',
+          time: getTimestamp(data),
+        }
+      })
+
+      // Urutkan secara kronologis (yang submit lebih dulu berada di antrian awal)
+      activeList.sort((a, b) => {
+        if (a.time !== b.time) return a.time - b.time
+        return (a.orderCode || '').localeCompare(b.orderCode || '')
+      })
+
+      const idx = activeList.findIndex((item) => item.id === order.id)
+      setQueuePosition(idx >= 0 ? idx + 1 : activeList.length || 1)
     })
     return () => unsub()
   }, [order])
@@ -89,6 +115,11 @@ export default function Tracking() {
             <button className="order-code-row" onClick={copyOrderCode}>
               #{order.orderCode} {copied ? '✓ Tersalin' : '⧉'}
             </button>
+            {(order.customerName || order.userName) && (
+              <span className="payment-method-chip" style={{ background: '#EAF1E8', color: '#3F6B3E', fontWeight: 600 }}>
+                👤 {order.customerName || order.userName}
+              </span>
+            )}
             {order.paymentMethod && (
               <span className="payment-method-chip">
                 {paymentIcons[order.paymentMethod] || '💰'} {order.paymentMethod}

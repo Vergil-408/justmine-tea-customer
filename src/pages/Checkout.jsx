@@ -47,10 +47,11 @@ const cardCls = 'bg-surface-container-lowest border border-outline-variant/50 sh
 
 export default function Checkout() {
   const { items, subtotal, clearCart } = useCart()
-  const { user, loading: authLoading } = useAuth()
+  const { user, profile, loading: authLoading } = useAuth()
   const { table } = useTable()
   const navigate = useNavigate()
 
+  const [customerName, setCustomerName] = useState(() => user?.displayName || profile?.displayName || '')
   const [method, setMethod] = useState('qris')
   const [stage, setStage] = useState('form') // 'form' | 'qris' | 'success' | 'expired'
   const [submitting, setSubmitting] = useState(false)
@@ -59,6 +60,12 @@ export default function Checkout() {
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [copied, setCopied] = useState(false)
   const requestIdRef = useRef(newRequestId())
+
+  useEffect(() => {
+    if (!customerName && (user?.displayName || profile?.displayName)) {
+      setCustomerName(user?.displayName || profile?.displayName || '')
+    }
+  }, [user, profile, customerName])
 
   // Arahkan tamu untuk buat akun member terlebih dahulu sebelum checkout
   useEffect(() => {
@@ -110,12 +117,14 @@ export default function Checkout() {
     setError('')
     setSubmitting(true)
     try {
+      const finalCustomerName = (customerName || user?.displayName || profile?.displayName || user?.email?.split('@')[0] || 'Pelanggan').trim()
       const result = await requestCreateOrder({
         items,
         tableNumber: table,
         paymentMethod: 'qris',
         clientRequestId: requestIdRef.current,
         user,
+        customerName: finalCustomerName,
       })
       if (!user) addGuestOrder(result.orderId, result.orderCode) // riwayat & notifikasi tamu
       setOrder(result)
@@ -255,26 +264,51 @@ export default function Checkout() {
   return (
     <Shell title="Pembayaran" onBack={() => navigate(-1)}>
       <main className="max-w-xl mx-auto px-4 pt-4 pb-40 space-y-4">
-        <section className={cardCls} aria-label="Nomor meja">
-          {table ? (
-            <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-primary-container">table_restaurant</span>
-              <div>
-                <p className="text-xs text-on-surface-variant">Pesanan diantar ke</p>
-                <p className="font-bold">Meja {table}</p>
+        <section className={cardCls} aria-label="Nomor meja dan nama pemesan">
+          <div className="space-y-3">
+            {table ? (
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-primary-container">table_restaurant</span>
+                <div>
+                  <p className="text-xs text-on-surface-variant">Pesanan diantar ke</p>
+                  <p className="font-bold">Meja {table}</p>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="flex items-start gap-3">
-              <span className="material-symbols-outlined text-error">qr_code_scanner</span>
-              <div>
-                <p className="font-bold text-sm">Scan QR di mejamu dulu</p>
-                <p className="text-xs text-on-surface-variant mt-0.5">
-                  Nomor meja diperlukan supaya pesanan bisa diantar. Scan QR yang ada di mejamu, lalu kembali ke halaman ini.
-                </p>
+            ) : (
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-error">qr_code_scanner</span>
+                <div>
+                  <p className="font-bold text-sm">Scan QR di mejamu dulu</p>
+                  <p className="text-xs text-on-surface-variant mt-0.5">
+                    Nomor meja diperlukan supaya pesanan bisa diantar. Scan QR yang ada di mejamu, lalu kembali ke halaman ini.
+                  </p>
+                </div>
               </div>
+            )}
+
+            <div className="pt-2.5 border-t border-outline-variant/40">
+              <label className="block text-xs font-semibold text-on-surface-variant mb-1" htmlFor="cust-name-input">
+                Nama Pemesan (Atas Nama)
+              </label>
+              <div className="relative">
+                <span className="material-symbols-outlined text-[18px] text-outline absolute left-3 top-1/2 -translate-y-1/2">
+                  person
+                </span>
+                <input
+                  id="cust-name-input"
+                  type="text"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Nama pemesan untuk dipanggil..."
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-outline-variant bg-surface text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                  required
+                />
+              </div>
+              <p className="text-[11px] text-on-surface-variant mt-1">
+                Nama ini akan tertera di struk dan dipanggil saat pesanan siap.
+              </p>
             </div>
-          )}
+          </div>
         </section>
 
         <section className={cardCls} aria-label="Ringkasan pesanan">

@@ -113,16 +113,17 @@ export default function Receipt() {
                   Meja {tableNum}
                 </span>
               )}
+            </div>
 
-              <span
-                className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ${
-                  isPaid
-                    ? 'bg-emerald-100 text-emerald-800'
-                    : 'bg-amber-100 text-amber-800'
-                }`}
-              >
-                {isPaid ? '✓ Lunas' : '⏳ Menunggu Kasir'}
-              </span>
+            {/* Nama Pemesan (Atas Nama) */}
+            <div className="mt-2.5 flex items-center justify-center">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low border border-outline-variant/60 text-xs text-on-surface">
+                <span className="material-symbols-outlined text-primary text-[15px]">person</span>
+                <span className="text-on-surface-variant text-[11px]">Atas Nama:</span>
+                <span className="font-bold text-on-surface">
+                  {order.customerName || order.userName || order.buyerName || 'Pelanggan'}
+                </span>
+              </div>
             </div>
 
             <p className="text-[11px] text-on-surface-variant mt-2">
@@ -178,6 +179,19 @@ export default function Receipt() {
               <span>Metode Pembayaran</span>
               <span className="font-semibold text-on-surface uppercase">
                 {order.paymentMethod || 'QRIS'}
+              </span>
+            </div>
+
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-on-surface-variant">Status Pembayaran</span>
+              <span
+                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                  isPaid
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-amber-100 text-amber-800'
+                }`}
+              >
+                {isPaid ? '✓ Lunas' : '⏳ Menunggu Kasir'}
               </span>
             </div>
 

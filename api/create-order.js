@@ -93,12 +93,15 @@ export default async function handler(req, res) {
     const { menuById, groups } = await loadCatalog(db)
     const { items, subtotal } = priceCart(body.items, menuById, groups)
 
+    const customerName = String(body.customerName || '').trim() || 'Pelanggan'
+
     const result = await createOrderTx(db, {
       clientRequestId,
       dateKey: jakartaDateKey(),
       serverTimestamp: FieldValue.serverTimestamp(),
       buildOrder: () => ({
         userId,
+        customerName,
         tableNumber,
         items,
         subtotal,

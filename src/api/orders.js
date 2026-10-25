@@ -40,12 +40,36 @@ export const listenToQueuePosition = (orderId, callback) => {
   if (!orderId) return () => {}
   const q = query(
     collection(db, 'orders'),
-    where('status', 'in', ['menunggu', 'diproses']),
-    orderBy('createdAt', 'asc')
+    where('status', 'in', ['menunggu', 'diproses'])
   )
   return onSnapshot(q, (snap) => {
-    const ids = snap.docs.map((d) => d.id)
-    const idx = ids.indexOf(orderId)
-    callback(idx >= 0 ? idx + 1 : null)
+    const getTimestamp = (d) => {
+      const val = d.createdAt || d.submittedAt
+      if (val?.toDate) return val.toDate().getTime()
+      if (val instanceof Date) return val.getTime()
+      if (typeof val === 'number') return val
+      if (typeof val === 'string') {
+        const parsed = Date.parse(val)
+        if (!isNaN(parsed)) return parsed
+      }
+      return Date.now()
+    }
+
+    const activeList = snap.docs.map((docSnap) => {
+      const data = docSnap.data()
+      return {
+        id: docSnap.id,
+        orderCode: data.orderCode || '',
+        time: getTimestamp(data),
+      }
+    })
+
+    activeList.sort((a, b) => {
+      if (a.time !== b.time) return a.time - b.time
+      return (a.orderCode || '').localeCompare(b.orderCode || '')
+    })
+
+    const idx = activeList.findIndex((item) => item.id === orderId)
+    callback(idx >= 0 ? idx + 1 : activeList.length || 1)
   })
 };

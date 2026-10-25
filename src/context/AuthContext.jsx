@@ -89,19 +89,33 @@ export function AuthProvider({ children }) {
         if (phone !== undefined) updates.phone = phone
         if (photoURL !== undefined) updates.photoURL = photoURL
 
-        // Simpan pembaruan ke Firestore secara real-time
+        // Simpan pembaruan ke Firestore secara real-time (mendukung data URL base64 atau string URL)
         await updateProfileInDb(user.uid, updates)
 
         // Sinkronisasi dengan akun Firebase Auth
+        // Catatan: Firebase Auth updateProfile memiliki limit URL maksimal 2048 karakter dan menolak data: base64 URI.
+        // Data URL disimpan di Firestore (users/{uid}), sedangkan URL publik (http/https) disinkronkan ke Auth.
         const authUpdates = {}
         if (displayName !== undefined) authUpdates.displayName = displayName
-        if (photoURL !== undefined) authUpdates.photoURL = photoURL
+        if (photoURL !== undefined) {
+            const isStandardUrl = typeof photoURL === 'string' && /^https?:\/\//i.test(photoURL)
+            if (isStandardUrl && photoURL.length <= 2048) {
+                authUpdates.photoURL = photoURL
+            } else if (!photoURL) {
+                authUpdates.photoURL = ''
+            }
+        }
+
         if (Object.keys(authUpdates).length > 0 && auth.currentUser) {
-            await updateProfile(auth.currentUser, authUpdates).catch((e) => console.warn('Gagal update auth profile:', e))
+            try {
+                await updateProfile(auth.currentUser, authUpdates)
+            } catch (e) {
+                console.warn('Gagal update auth profile:', e)
+            }
         }
 
         setProfile((prev) => ({ ...prev, ...updates }))
-        setUser((prev) => (prev ? { ...prev, ...authUpdates } : prev))
+        setUser((prev) => (prev ? { ...prev, ...authUpdates, photoURL: photoURL !== undefined ? photoURL : prev.photoURL } : prev))
     }
 
     async function logout() {

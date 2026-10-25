@@ -109,9 +109,11 @@ export default function Receipt() {
         <div className="w-full max-w-[360px] mx-auto bg-white border border-neutral-300 shadow-md p-5 font-mono text-neutral-900 leading-tight print:shadow-none print:border-none print:p-0 print:max-w-none print:w-[78mm]">
           {/* Logo & Identitas Brand */}
           <div className="text-center pb-2">
-            <div className="w-9 h-9 mx-auto rounded-full border border-neutral-400 flex items-center justify-center text-base mb-1.5 shadow-xs">
-              🍃
-            </div>
+            <img
+              src="/icon.png"
+              alt="Justmine Tea Logo"
+              className="w-14 h-14 mx-auto object-contain rounded-full border border-neutral-300 shadow-xs mb-2 bg-white"
+            />
             <h2 className="font-extrabold text-base tracking-[0.22em] text-black uppercase">
               JUSTMINE TEA
             </h2>

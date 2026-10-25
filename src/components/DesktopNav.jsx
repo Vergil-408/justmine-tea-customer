@@ -42,9 +42,11 @@ export default function DesktopNav() {
     <header className="hidden lg:block sticky top-0 z-40 bg-surface-container-lowest/95 backdrop-blur-xl border-b border-outline-variant/40">
       <div className="max-w-[1400px] mx-auto px-8 h-[72px] flex items-center gap-8">
         <div className="flex items-center gap-3 shrink-0">
-          <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center">
-            <span className="material-symbols-outlined text-primary-container text-[20px]">spa</span>
-          </div>
+          <img
+            src="/icon.png"
+            alt="Justmine Tea"
+            className="w-10 h-10 rounded-full object-cover shrink-0 border border-outline-variant/60 shadow-xs"
+          />
           <div className="flex flex-col text-left leading-tight">
             <div className="flex items-center gap-2">
               <span className="font-bold text-on-surface">Justmine Tea</span>

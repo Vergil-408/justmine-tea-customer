@@ -22,8 +22,8 @@ function GoogleIcon({ className = 'w-5 h-5' }) {
 
 function EmblemPlaceholder({ className = '' }) {
     return (
-        <div className={`bg-gradient-to-b from-[#EAE6D6] to-[#FAF7F0] flex items-center justify-center ${className}`}>
-            <span className="material-symbols-outlined text-primary text-[32px]">spa</span>
+        <div className={`flex items-center justify-center overflow-hidden bg-white rounded-full shadow-sm border border-outline-variant/60 ${className}`}>
+            <img src="/icon.png" alt="Justmine Tea" className="w-full h-full object-contain" />
         </div>
     )
 }

@@ -6,9 +6,11 @@ export default function MobileHeader({ subtitle = 'Home' }) {
         <header className="lg:hidden sticky top-0 z-40 bg-surface-container-lowest/95 backdrop-blur-xl shadow-[0_1px_8px_rgba(42,49,39,0.06)]">
             <div className="h-16 px-4 flex items-center justify-between">
                 <div className="flex items-center gap-2 min-w-0">
-                    <div className="h-8 w-8 rounded-full bg-secondary-container flex items-center justify-center shrink-0">
-                        <span className="material-symbols-outlined text-primary text-[18px]">spa</span>
-                    </div>
+                    <img
+                        src="/icon.png"
+                        alt="Justmine Tea"
+                        className="h-8 w-8 rounded-full object-cover shrink-0 border border-outline-variant/60 shadow-xs"
+                    />
                     <div className="flex flex-col min-w-0">
                         <span className="text-[15px] font-semibold text-primary-container truncate leading-tight">Justmine Tea</span>
                         <span className="text-[11px] text-on-surface-variant truncate -mt-0.5">{subtitle}</span>

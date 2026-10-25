@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useMenuItems } from '../hooks/useMenuItems.js'
 import { useOptionGroups } from '../hooks/useOptionGroups.js'
@@ -10,14 +10,25 @@ import DesktopNav from '../components/DesktopNav.jsx'
 import BottomNav from '../components/BottomNav.jsx'
 import CustomizeModal from '../components/CustomizeModal.jsx'
 
-const filters = [
-  { key: 'semua', label: 'Semua' },
-  { key: 'classic', label: 'Classic Tea' },
-  { key: 'fruit', label: 'Fruit Tea' },
-  { key: 'milktea', label: 'Milk Tea' },
-  { key: 'signature', label: 'Signature Tea' },
-  { key: 'coffee', label: 'Coffee Series' },
-]
+const KNOWN_CATEGORY_LABELS = {
+  signature: 'Signature Tea',
+  classic: 'Classic Tea',
+  fruit: 'Fruit Tea',
+  milktea: 'Milk Tea',
+  coffee: 'Coffee Series',
+  customizable: 'Customizable Tea',
+}
+
+function formatCategoryLabel(raw) {
+  if (!raw) return ''
+  const lower = raw.trim().toLowerCase()
+  if (KNOWN_CATEGORY_LABELS[lower]) return KNOWN_CATEGORY_LABELS[lower]
+  return raw
+    .trim()
+    .split(' ')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ')
+}
 
 const rupiah = (n) => 'Rp ' + Number(n || 0).toLocaleString('id-ID')
 
@@ -80,17 +91,40 @@ export default function Menu() {
   const { groups } = useOptionGroups()
   const [searchParams] = useSearchParams()
   const initialFilter = searchParams.get('filter')
-  const [activeFilter, setActiveFilter] = useState(
-    ['semua', 'classic', 'fruit', 'milktea', 'signature', 'coffee'].includes(initialFilter)
-      ? initialFilter
-      : 'semua'
-  )
+  const [activeFilter, setActiveFilter] = useState(initialFilter || 'semua')
+
+  // Generate dynamic filters strictly based on categories present in items from database
+  const filters = useMemo(() => {
+    const catMap = new Map()
+    items.forEach((item) => {
+      const raw = (item.category || '').trim()
+      if (!raw) return
+      const key = raw.toLowerCase()
+      if (!catMap.has(key)) {
+        catMap.set(key, formatCategoryLabel(raw))
+      }
+    })
+
+    const list = [{ key: 'semua', label: 'Semua' }]
+    catMap.forEach((label, key) => {
+      list.push({ key, label })
+    })
+    return list
+  }, [items])
+
+  useEffect(() => {
+    if (activeFilter !== 'semua' && filters.length > 1) {
+      const exists = filters.some((f) => f.key === activeFilter)
+      if (!exists) setActiveFilter('semua')
+    }
+  }, [filters, activeFilter])
+
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('default')
   const [customizingItem, setCustomizingItem] = useState(null)
 
   const matchesFilter = (item, key) =>
-    key === 'semua' ? true : String(item.category || '').toLowerCase() === key
+    key === 'semua' ? true : String(item.category || '').trim().toLowerCase() === key
 
   const filtered = items.filter((item) => {
     const matchSearch = (item.name || '').toLowerCase().includes(search.toLowerCase())

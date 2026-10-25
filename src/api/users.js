@@ -44,6 +44,17 @@ export async function updateUserPhone(uid, phone) {
     await updateDoc(ref, { phone })
 }
 
+// Update data profil user (nama lengkap, nomor telepon, foto profil) secara real-time ke Firestore
+export async function updateUserProfileDoc(uid, { displayName, phone, photoURL }) {
+    if (!uid) return
+    const ref = doc(db, 'users', uid)
+    const updates = { updatedAt: new Date().toISOString() }
+    if (displayName !== undefined) updates.displayName = displayName
+    if (phone !== undefined) updates.phone = phone
+    if (photoURL !== undefined) updates.photoURL = photoURL
+    await updateDoc(ref, updates)
+}
+
 // Dipanggil setelah order berhasil dibuat, hanya kalau user sedang login.
 // pointsEarned dihitung dari total belanja (contoh: 1 poin tiap Rp1.000).
 export async function addPointsAfterOrder(uid, orderTotal) {

@@ -10,7 +10,7 @@ import {
     updateProfile,
 } from 'firebase/auth'
 import { auth, db } from '../api/firebase.js'
-import { ensureUserProfile, updateUserPhone as updatePhoneInDb } from '../api/users.js'
+import { ensureUserProfile, updateUserPhone as updatePhoneInDb, updateUserProfileDoc as updateProfileInDb } from '../api/users.js'
 import { doc, getDoc } from 'firebase/firestore'
 
 const AuthContext = createContext(null)
@@ -82,6 +82,28 @@ export function AuthProvider({ children }) {
         setProfile((prev) => ({ ...prev, phone }))
     }
 
+    async function updateCustomerProfile({ displayName, phone, photoURL }) {
+        if (!user) return
+        const updates = {}
+        if (displayName !== undefined) updates.displayName = displayName
+        if (phone !== undefined) updates.phone = phone
+        if (photoURL !== undefined) updates.photoURL = photoURL
+
+        // Simpan pembaruan ke Firestore secara real-time
+        await updateProfileInDb(user.uid, updates)
+
+        // Sinkronisasi dengan akun Firebase Auth
+        const authUpdates = {}
+        if (displayName !== undefined) authUpdates.displayName = displayName
+        if (photoURL !== undefined) authUpdates.photoURL = photoURL
+        if (Object.keys(authUpdates).length > 0 && auth.currentUser) {
+            await updateProfile(auth.currentUser, authUpdates).catch((e) => console.warn('Gagal update auth profile:', e))
+        }
+
+        setProfile((prev) => ({ ...prev, ...updates }))
+        setUser((prev) => (prev ? { ...prev, ...authUpdates } : prev))
+    }
+
     async function logout() {
         await signOut(auth)
         setUser(null)
@@ -99,6 +121,7 @@ export function AuthProvider({ children }) {
                 resetPassword,
                 loginWithGoogle,
                 updateUserPhone,
+                updateCustomerProfile,
                 logout,
             }}
         >

@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useUserProfile } from '../hooks/useUserProfile.js'
-import { isValidPhone } from '../utils/authErrors.js'
+import { compressAvatar } from '../utils/avatarImage.js'
 import MobileHeader from '../components/MobileHeader.jsx'
 import DesktopNav from '../components/DesktopNav.jsx'
 import BottomNav from '../components/BottomNav.jsx'
@@ -15,22 +15,22 @@ function Icon({ name, className = '' }) {
   )
 }
 
-function Avatar({ user, size = 'h-20 w-20' }) {
-  if (user?.photoURL) {
+function Avatar({ photoURL, name = '', size = 'h-20 w-20', textClass = 'text-4xl' }) {
+  if (photoURL) {
     return (
       <img
-        src={user.photoURL}
-        alt=""
+        src={photoURL}
+        alt={name ? `Foto ${name}` : 'Foto Profil'}
         referrerPolicy="no-referrer"
-        className={`${size} rounded-full border border-outline-variant object-cover`}
+        className={`${size} rounded-full border border-outline-variant object-cover shadow-inner`}
       />
     )
   }
   return (
     <div
-      className={`${size} flex items-center justify-center rounded-full border border-outline-variant bg-surface-container text-primary`}
+      className={`${size} flex items-center justify-center rounded-full border border-outline-variant bg-surface-container text-primary shadow-inner`}
     >
-      <Icon name="person" className="text-4xl" />
+      <Icon name="person" className={textClass} />
     </div>
   )
 }
@@ -61,48 +61,166 @@ function InfoRow({ icon, label, value, onClick, danger = false }) {
   )
 }
 
+const PRESET_AVATARS = [
+  { id: 'matcha', name: 'Matcha', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=Matcha&backgroundColor=b6e3f4' },
+  { id: 'jasmine', name: 'Jasmine', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=Jasmine&backgroundColor=c0aede' },
+  { id: 'boba', name: 'Boba Tea', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=BobaTea&backgroundColor=ffd5dc' },
+  { id: 'oolong', name: 'Oolong', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=Oolong&backgroundColor=d1d4f9' },
+]
+
 export default function Profile() {
   const navigate = useNavigate()
-  const { user, loading, logout, updateUserPhone } = useAuth()
-  const { points, totalOrders, phone } = useUserProfile()
+  const { user, loading, logout, updateCustomerProfile } = useAuth()
+  const { points, totalOrders, phone, profile } = useUserProfile()
 
-  const [showPhoneModal, setShowPhoneModal] = useState(false)
-  const [inputPhone, setInputPhone] = useState('')
+  // State untuk Modal Pengaturan Profil
+  const [showSettingsModal, setShowSettingsModal] = useState(false)
+  const [editName, setEditName] = useState('')
+  const [editPhone, setEditPhone] = useState('')
+  const [avatarPreview, setAvatarPreview] = useState('')
+  const [nameError, setNameError] = useState('')
   const [phoneError, setPhoneError] = useState('')
-  const [savingPhone, setSavingPhone] = useState(false)
+  const [avatarError, setAvatarError] = useState('')
+  const [savingSettings, setSavingSettings] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [saveError, setSaveError] = useState('')
+
+  const fileInputRef = useRef(null)
+
+  // Validasi Nama Lengkap: TIDAK boleh mengandung angka
+  const validateName = (val) => {
+    const trimmed = (val ?? '').trim()
+    if (!trimmed) {
+      return 'Nama lengkap wajib diisi.'
+    }
+    if (/\d/.test(val)) {
+      return 'Nama lengkap tidak boleh mengandung angka.'
+    }
+    if (trimmed.length < 2) {
+      return 'Nama lengkap minimal 2 karakter.'
+    }
+    return ''
+  }
+
+  // Validasi Nomor Telepon: HANYA boleh berisi angka
+  const validatePhone = (val) => {
+    const trimmed = (val ?? '').trim()
+    if (!trimmed) {
+      return 'Nomor telepon wajib diisi.'
+    }
+    if (/[^\d]/.test(val)) {
+      return 'Nomor telepon hanya boleh berisi angka (tidak boleh mengandung huruf atau simbol).'
+    }
+    if (trimmed.length < 9 || trimmed.length > 15) {
+      return 'Nomor telepon harus antara 9 - 15 digit angka.'
+    }
+    return ''
+  }
+
+  // Form validity check
+  const currentNameError = validateName(editName)
+  const currentPhoneError = validatePhone(editPhone)
+  const isFormValid = !currentNameError && !currentPhoneError && !savingSettings
+
+  const currentDisplayName = profile?.displayName || user?.displayName || 'Sahabat Justmine'
+  const currentPhone = profile?.phone || phone || ''
+  const currentPhoto = profile?.photoURL || user?.photoURL || ''
+
+  const handleOpenSettings = () => {
+    setEditName(currentDisplayName === 'Sahabat Justmine' ? '' : currentDisplayName)
+    setEditPhone(currentPhone)
+    setAvatarPreview(currentPhoto)
+    setNameError('')
+    setPhoneError('')
+    setAvatarError('')
+    setSaveError('')
+    setSaveSuccess(false)
+    setShowSettingsModal(true)
+  }
+
+  const handleNameChange = (e) => {
+    const val = e.target.value
+    setEditName(val)
+    setNameError(validateName(val))
+    if (saveError) setSaveError('')
+  }
+
+  const handlePhoneChange = (e) => {
+    const val = e.target.value
+    setEditPhone(val)
+    setPhoneError(validatePhone(val))
+    if (saveError) setSaveError('')
+  }
+
+  const handleAvatarFileSelect = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setAvatarError('')
+    try {
+      // Kompres gambar menjadi WebP/JPEG 1:1 maksimal 256x256 (~15-25KB)
+      const compressedDataUrl = await compressAvatar(file)
+      setAvatarPreview(compressedDataUrl)
+    } catch (err) {
+      setAvatarError(err.message || 'Gagal memproses foto profil.')
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleRemoveAvatar = () => {
+    setAvatarPreview('')
+    setAvatarError('')
+  }
+
+  const handleSelectPresetAvatar = (url) => {
+    setAvatarPreview(url)
+    setAvatarError('')
+  }
+
+  const handleSaveSettings = async (e) => {
+    e.preventDefault()
+
+    const nErr = validateName(editName)
+    const pErr = validatePhone(editPhone)
+
+    if (nErr || pErr) {
+      setNameError(nErr)
+      setPhoneError(pErr)
+      return
+    }
+
+    setSavingSettings(true)
+    setSaveError('')
+    setSaveSuccess(false)
+
+    try {
+      // Pembaruan data profil secara real-time ke Firebase Firestore & Firebase Auth
+      await updateCustomerProfile({
+        displayName: editName.trim(),
+        phone: editPhone.trim(),
+        photoURL: avatarPreview || '',
+      })
+
+      setSaveSuccess(true)
+      setTimeout(() => {
+        setShowSettingsModal(false)
+        setSaveSuccess(false)
+      }, 700)
+    } catch (err) {
+      console.error('Gagal memperbarui profil:', err)
+      setSaveError(err.message || 'Terjadi kesalahan saat menyimpan data ke Firebase.')
+    } finally {
+      setSavingSettings(false)
+    }
+  }
 
   const handleLogout = async () => {
     await logout()
     navigate('/login')
   }
 
-  const handleOpenPhoneModal = () => {
-    setInputPhone(phone || '')
-    setPhoneError('')
-    setShowPhoneModal(true)
-  }
-
-  const handleSavePhone = async (e) => {
-    e.preventDefault()
-    const clean = inputPhone.trim()
-    if (!clean) return setPhoneError('Nomor WhatsApp wajib diisi.')
-    if (!isValidPhone(clean)) return setPhoneError('Format nomor HP tidak valid (contoh: 081234567890).')
-
-    setSavingPhone(true)
-    setPhoneError('')
-    try {
-      await updateUserPhone(clean)
-      setShowPhoneModal(false)
-    } catch (err) {
-      setPhoneError('Gagal menyimpan: ' + err.message)
-    } finally {
-      setSavingPhone(false)
-    }
-  }
-
-  const displayName = user?.displayName || 'Sahabat Justmine'
-
-  /* ---------- Isi per state ---------- */
+  /* ---------- Tampilan per state ---------- */
 
   const loadingView = (
     <div className="flex flex-col items-center gap-3 py-24 text-on-surface-variant">
@@ -135,37 +253,63 @@ export default function Profile() {
   const memberView = (
     <div className="space-y-5">
       {/* Peringatan jika nomor WhatsApp belum diisi */}
-      {!phone && (
+      {!currentPhone && (
         <div className="rounded-2xl border border-amber-300 bg-amber-50/90 p-4 text-amber-900 flex items-start justify-between gap-3 shadow-sm">
           <div className="flex items-start gap-2.5">
             <span className="material-symbols-outlined text-[22px] text-amber-700 shrink-0 mt-0.5">warning</span>
             <div>
-              <p className="text-xs font-bold text-amber-900">Nomor WhatsApp belum terdaftar</p>
+              <p className="text-xs font-bold text-amber-900">Nomor Telepon belum terdaftar</p>
               <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
-                Lengkapi nomor WhatsApp agar akun member kamu aktif dan bisa mengumpulkan poin pesanan.
+                Lengkapi nomor telepon agar akun member kamu aktif dan bisa mengumpulkan poin pesanan.
               </p>
             </div>
           </div>
           <button
             type="button"
-            onClick={handleOpenPhoneModal}
+            onClick={handleOpenSettings}
             className="shrink-0 px-3 py-1.5 rounded-full bg-primary text-white text-xs font-bold shadow-sm hover:bg-primary-container transition-colors"
           >
-            Isi Sekarang
+            Lengkapi
           </button>
         </div>
       )}
 
-      {/* Identitas */}
+      {/* Identitas Card & Tombol Settings */}
       <section className="flex items-center gap-4 rounded-3xl border border-outline-variant bg-white p-5 shadow-sm">
-        <Avatar user={user} />
-        <div className="min-w-0">
-          <h2 className="truncate font-serif text-2xl font-semibold text-on-surface">{displayName}</h2>
-          {user?.email && <p className="truncate text-xs text-on-surface-variant">{user.email}</p>}
+        <div className="relative shrink-0">
+          <Avatar photoURL={currentPhoto} name={currentDisplayName} size="h-20 w-20" />
+          <button
+            type="button"
+            onClick={handleOpenSettings}
+            title="Ubah Foto Profil"
+            className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white shadow-md hover:bg-primary-container transition-colors"
+          >
+            <Icon name="photo_camera" className="text-sm" />
+          </button>
         </div>
+
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate font-serif text-2xl font-semibold text-on-surface">{currentDisplayName}</h2>
+          {user?.email && <p className="truncate text-xs text-on-surface-variant">{user.email}</p>}
+          {currentPhone && (
+            <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-primary">
+              <Icon name="call" className="text-sm" />
+              <span>{currentPhone}</span>
+            </p>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={handleOpenSettings}
+          className="shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-outline-variant bg-surface-container-lowest hover:bg-surface-container text-xs font-bold text-on-surface transition-all shadow-sm active:scale-95"
+        >
+          <Icon name="tune" className="text-base text-primary" />
+          <span>Settings</span>
+        </button>
       </section>
 
-      {/* Poin */}
+      {/* Poin Loyalty */}
       <section className="rounded-3xl bg-[#2E4E3A] p-5 text-white shadow-sm">
         <p className="text-xs font-bold uppercase tracking-wider text-white/80">Poin Loyalty Member</p>
         <p className="mt-1 flex items-baseline gap-2 text-white">
@@ -175,14 +319,20 @@ export default function Profile() {
         <p className="mt-3 text-xs text-white/80">Poin masuk otomatis setelah pesanan selesai.</p>
       </section>
 
-      {/* Statistik & aksi */}
+      {/* Statistik & Aksi Profil */}
       <section className="divide-y divide-outline-variant overflow-hidden rounded-3xl border border-outline-variant bg-white shadow-sm">
         <InfoRow
+          icon="manage_accounts"
+          label="Pengaturan Profil"
+          value={<span className="text-xs font-semibold text-primary">Ubah Nama, HP & Foto</span>}
+          onClick={handleOpenSettings}
+        />
+        <InfoRow
           icon="call"
-          label="Nomor WhatsApp"
+          label="Nomor Telepon"
           value={
-            phone ? (
-              <span className="text-on-surface font-semibold">{phone}</span>
+            currentPhone ? (
+              <span className="text-on-surface font-semibold">{currentPhone}</span>
             ) : (
               <span className="inline-flex items-center gap-1 text-amber-800 font-bold bg-amber-100 px-2.5 py-1 rounded-full text-xs">
                 <span>+ Isi Nomor</span>
@@ -190,7 +340,7 @@ export default function Profile() {
               </span>
             )
           }
-          onClick={handleOpenPhoneModal}
+          onClick={handleOpenSettings}
         />
         <InfoRow icon="receipt_long" label="Total Pesanan" value={totalOrders ?? 0} />
         <InfoRow icon="history" label="Riwayat Pesanan & E-Receipt" onClick={() => navigate('/history')} />
@@ -256,63 +406,243 @@ export default function Profile() {
         </div>
       </main>
 
-      {/* Modal Input / Ubah Nomor WhatsApp */}
-      {showPhoneModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl border border-outline-variant/60">
-            <div className="flex justify-between items-center mb-3">
-              <div className="flex items-center gap-2">
-                <span className="w-8 h-8 rounded-full bg-secondary-container text-primary flex items-center justify-center">
-                  <span className="material-symbols-outlined text-[18px]">call</span>
+      {/* ================= MODAL SETTINGS PROFIL ================= */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-outline-variant/60 max-h-[90vh] overflow-y-auto">
+            {/* Header Modal */}
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-outline-variant">
+              <div className="flex items-center gap-2.5">
+                <span className="w-9 h-9 rounded-full bg-secondary-container text-primary flex items-center justify-center">
+                  <Icon name="tune" className="text-xl" />
                 </span>
-                <h3 className="font-bold text-base text-on-surface">Nomor WhatsApp</h3>
+                <div>
+                  <h3 className="font-bold text-base text-on-surface leading-tight">Pengaturan Profil</h3>
+                  <p className="text-[11px] text-on-surface-variant">Update data &amp; foto ke Firebase</p>
+                </div>
               </div>
               <button
                 type="button"
-                onClick={() => setShowPhoneModal(false)}
-                className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant"
+                onClick={() => setShowSettingsModal(false)}
+                className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors"
+                aria-label="Tutup"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-on-surface-variant leading-relaxed mb-4">
-              Nomor WhatsApp digunakan sebagai identitas member dan mengumpulkan poin belanjamu di Justmine Tea.
-            </p>
+            {/* Error / Success Feedback Banner */}
+            {saveSuccess && (
+              <div className="mb-4 rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-emerald-900 flex items-center gap-2 text-xs font-bold animate-fadeIn">
+                <Icon name="check_circle" className="text-emerald-600 text-lg" />
+                <span>Profil berhasil diperbarui di Firebase!</span>
+              </div>
+            )}
+            {saveError && (
+              <div className="mb-4 rounded-xl border border-red-300 bg-red-50 p-3 text-red-900 flex items-center gap-2 text-xs font-bold animate-fadeIn">
+                <Icon name="error" className="text-red-600 text-lg" />
+                <span>{saveError}</span>
+              </div>
+            )}
 
-            <form onSubmit={handleSavePhone} noValidate>
-              <label htmlFor="modal-phone" className="block text-xs font-bold text-on-surface-variant mb-1">
-                Nomor WhatsApp / HP
-              </label>
-              <input
-                id="modal-phone"
-                type="tel"
-                autoFocus
-                placeholder="Contoh: 081234567890"
-                value={inputPhone}
-                onChange={(e) => {
-                  setInputPhone(e.target.value)
-                  setPhoneError('')
-                }}
-                className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface-container-lowest text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all mb-2"
-              />
+            <form onSubmit={handleSaveSettings} noValidate className="space-y-4">
+              {/* Bagian Foto Profil */}
+              <div>
+                <label className="block text-xs font-bold text-on-surface-variant mb-2">
+                  Foto Profil
+                </label>
+                <div className="flex items-center gap-4 p-3 rounded-2xl bg-surface-container-lowest border border-outline-variant">
+                  <div className="relative shrink-0">
+                    <Avatar
+                      photoURL={avatarPreview}
+                      name={editName || currentDisplayName}
+                      size="h-16 w-16"
+                      textClass="text-3xl"
+                    />
+                  </div>
 
-              {phoneError && <p className="text-xs font-semibold text-error mb-3">{phoneError}</p>}
+                  <div className="flex-1 space-y-1.5">
+                    <div className="flex flex-wrap gap-2">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAvatarFileSelect}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-3 py-1.5 rounded-full bg-primary text-white text-xs font-bold shadow-sm hover:bg-primary-container transition-colors flex items-center gap-1"
+                      >
+                        <Icon name="upload" className="text-sm" />
+                        <span>Pilih Foto</span>
+                      </button>
 
-              <div className="flex gap-2 mt-4">
+                      {avatarPreview && (
+                        <button
+                          type="button"
+                          onClick={handleRemoveAvatar}
+                          className="px-2.5 py-1.5 rounded-full border border-outline-variant hover:bg-error-container hover:text-error text-xs font-semibold text-on-surface-variant transition-colors"
+                        >
+                          Hapus Foto
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-on-surface-variant leading-tight">
+                      Maksimal 10 MB. Foto otomatis dipotong persegi (1:1) dan dioptimasi.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Preset Avatar Cepat */}
+                <div className="mt-2.5">
+                  <p className="text-[11px] font-semibold text-on-surface-variant mb-1.5">
+                    Atau gunakan avatar instan:
+                  </p>
+                  <div className="flex items-center gap-2">
+                    {PRESET_AVATARS.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => handleSelectPresetAvatar(item.url)}
+                        title={`Pilih ${item.name}`}
+                        className={`h-9 w-9 rounded-full overflow-hidden border-2 transition-transform active:scale-90 ${
+                          avatarPreview === item.url ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-outline-variant hover:border-primary/50'
+                        }`}
+                      >
+                        <img src={item.url} alt={item.name} className="h-full w-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {avatarError && (
+                  <p className="text-xs font-semibold text-error mt-1.5 flex items-center gap-1">
+                    <Icon name="error" className="text-sm" />
+                    <span>{avatarError}</span>
+                  </p>
+                )}
+              </div>
+
+              {/* Input Nama Lengkap (Validasi: TIDAK BOLEH MENGANDUNG ANGKA) */}
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label htmlFor="edit-name" className="text-xs font-bold text-on-surface-variant">
+                    Nama Lengkap <span className="text-error">*</span>
+                  </label>
+                  <span className="text-[10px] text-on-surface-variant">Tanpa angka</span>
+                </div>
+                <div className="relative">
+                  <input
+                    id="edit-name"
+                    type="text"
+                    value={editName}
+                    onChange={handleNameChange}
+                    placeholder="Contoh: Budi Santoso"
+                    className={`w-full px-3.5 py-2.5 rounded-xl border text-sm text-on-surface bg-surface-container-lowest transition-all focus:outline-none focus:ring-2 ${
+                      nameError
+                        ? 'border-error focus:border-error focus:ring-error/20 bg-red-50/20'
+                        : editName.trim()
+                        ? 'border-emerald-600/50 focus:border-primary focus:ring-primary/20'
+                        : 'border-outline-variant focus:border-primary focus:ring-primary/20'
+                    }`}
+                  />
+                  {editName.trim() && !nameError && (
+                    <span className="absolute right-3 top-2.5 text-emerald-600">
+                      <Icon name="check_circle" className="text-base" />
+                    </span>
+                  )}
+                </div>
+
+                {/* Real-time error message */}
+                {nameError ? (
+                  <p className="flex items-center gap-1 text-xs font-semibold text-error mt-1.5 animate-fadeIn">
+                    <Icon name="error" className="text-sm shrink-0" />
+                    <span>{nameError}</span>
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-on-surface-variant mt-1">
+                    Hanya huruf alfabet dan spasi (tidak boleh mengandung angka).
+                  </p>
+                )}
+              </div>
+
+              {/* Input Nomor Telepon (Validasi: HANYA BOLEH ANGKA) */}
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label htmlFor="edit-phone" className="text-xs font-bold text-on-surface-variant">
+                    Nomor Telepon / WhatsApp <span className="text-error">*</span>
+                  </label>
+                  <span className="text-[10px] text-on-surface-variant">Hanya angka</span>
+                </div>
+                <div className="relative">
+                  <input
+                    id="edit-phone"
+                    type="tel"
+                    inputMode="numeric"
+                    value={editPhone}
+                    onChange={handlePhoneChange}
+                    placeholder="Contoh: 081234567890"
+                    className={`w-full px-3.5 py-2.5 rounded-xl border text-sm text-on-surface bg-surface-container-lowest transition-all focus:outline-none focus:ring-2 ${
+                      phoneError
+                        ? 'border-error focus:border-error focus:ring-error/20 bg-red-50/20'
+                        : editPhone.trim()
+                        ? 'border-emerald-600/50 focus:border-primary focus:ring-primary/20'
+                        : 'border-outline-variant focus:border-primary focus:ring-primary/20'
+                    }`}
+                  />
+                  {editPhone.trim() && !phoneError && (
+                    <span className="absolute right-3 top-2.5 text-emerald-600">
+                      <Icon name="check_circle" className="text-base" />
+                    </span>
+                  )}
+                </div>
+
+                {/* Real-time error message */}
+                {phoneError ? (
+                  <p className="flex items-center gap-1 text-xs font-semibold text-error mt-1.5 animate-fadeIn">
+                    <Icon name="error" className="text-sm shrink-0" />
+                    <span>{phoneError}</span>
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-on-surface-variant mt-1">
+                    Hanya boleh berisi 9–15 digit angka (tanpa huruf, spasi, atau simbol).
+                  </p>
+                )}
+              </div>
+
+              {/* Tombol Simpan & Batal */}
+              <div className="flex gap-2.5 pt-3 border-t border-outline-variant">
                 <button
                   type="button"
-                  onClick={() => setShowPhoneModal(false)}
-                  className="flex-1 py-3 rounded-full border border-outline-variant text-xs font-bold text-on-surface-variant hover:bg-surface-container transition-colors"
+                  onClick={() => setShowSettingsModal(false)}
+                  disabled={savingSettings}
+                  className="flex-1 py-2.5 rounded-full border border-outline-variant text-xs font-bold text-on-surface-variant hover:bg-surface-container transition-colors disabled:opacity-50"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  disabled={savingPhone}
-                  className="flex-1 py-3 rounded-full bg-primary hover:bg-primary-container text-white text-xs font-bold shadow-sm transition-all disabled:opacity-50"
+                  disabled={!isFormValid || savingSettings}
+                  title={
+                    !isFormValid
+                      ? 'Harap isi Nama Lengkap (tanpa angka) dan Nomor Telepon (hanya angka) dengan benar.'
+                      : 'Simpan ke Firebase'
+                  }
+                  className="flex-1 py-2.5 px-4 rounded-full bg-primary hover:bg-primary-container text-white text-xs font-bold shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 active:scale-95"
                 >
-                  {savingPhone ? 'Menyimpan…' : 'Simpan Nomor'}
+                  {savingSettings ? (
+                    <>
+                      <Icon name="progress_activity" className="animate-spin text-sm" />
+                      <span>Menyimpan…</span>
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="check" className="text-sm" />
+                      <span>Simpan Perubahan</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>

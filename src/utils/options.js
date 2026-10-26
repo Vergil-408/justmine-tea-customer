@@ -34,15 +34,28 @@ export function resolveOptions(item, groups = []) {
 
   const effectiveGroups = groups && groups.length > 0 ? groups : seedOptionGroups
 
+  const cat = String(item.category || '').toLowerCase()
+  const isFood = ['sweets', 'sweet', 'makanan', 'snack', 'food', 'pastry', 'bakery', 'dessert'].includes(cat)
+  const isSignature = ['signature', 'classic', 'original', 'coffee'].includes(cat)
+
   let ids = Array.isArray(item.optionGroupIds) && item.optionGroupIds.length > 0 ? item.optionGroupIds : null
   if (!ids) {
-    const cat = String(item.category || '').toLowerCase()
-    if (cat === 'classic' || cat === 'original' || cat === 'coffee') {
+    if (isFood) {
+      ids = ['catatan']
+    } else if (isSignature) {
       ids = ['gula', 'es', 'catatan']
     } else {
       ids = ['gula', 'es', 'topping', 'catatan']
     }
+  } else {
+    // Pastikan aturan kategori selalu dipatuhi
+    if (isFood) {
+      ids = ids.filter((id) => id === 'catatan')
+    } else if (isSignature) {
+      ids = ids.filter((id) => id !== 'topping' && id !== 'topping_tea')
+    }
   }
+
 
   const byId = new Map(effectiveGroups.map((g) => [g.id, g]))
   const fallbackById = new Map(seedOptionGroups.map((g) => [g.id, g]))
@@ -580,7 +593,10 @@ export function getItemCustomizationDetails(item) {
   }
 
   // 6. Default standard badges untuk menu minuman jika belum memiliki kustomisasi khusus di database
-  if (badges.length === 0 && !item?.isBundle) {
+  const cat = String(item?.category || '').toLowerCase()
+  const isFood = ['sweets', 'sweet', 'makanan', 'snack', 'food', 'pastry', 'bakery', 'dessert'].includes(cat)
+
+  if (badges.length === 0 && !item?.isBundle && !isFood) {
     badges.push({
       type: 'ice',
       label: 'Normal Ice',
@@ -599,6 +615,7 @@ export function getItemCustomizationDetails(item) {
 
   return badges
 }
+
 
 
 

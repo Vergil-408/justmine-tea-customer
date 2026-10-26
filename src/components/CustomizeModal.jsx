@@ -79,29 +79,36 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
 
   if (!isOpen || !item) return null
 
+  const categoryLower = String(item.category || '').toLowerCase()
+  const isFoodOrSweets = ['sweets', 'sweet', 'makanan', 'snack', 'food', 'pastry', 'bakery', 'dessert'].includes(categoryLower)
+  const isNoTopping = ['signature', 'classic', 'original', 'coffee', 'sweets', 'sweet', 'makanan', 'snack', 'food', 'pastry', 'bakery', 'dessert'].includes(categoryLower)
+
   // Pisahkan grup opsi: Gula, Es, Topping, Catatan
-  const sugarGroup = resolved.find((g) => g.id === 'gula') || {
-    id: 'gula',
-    label: 'Tingkat Kemanisan',
-    choices: [
-      { id: 'normal', label: 'Normal (100%)', priceDelta: 0 },
-      { id: 'less', label: 'Sedikit (50%)', priceDelta: 0 },
-      { id: 'no', label: 'Tanpa Gula (0%)', priceDelta: 0 },
-    ],
-  }
-  const iceGroup = resolved.find((g) => g.id === 'es') || {
-    id: 'es',
-    label: 'Tingkat Es Batu',
-    choices: [
-      { id: 'normal', label: 'Normal Ice', priceDelta: 0 },
-      { id: 'less', label: 'Sedikit Es', priceDelta: 0 },
-      { id: 'no', label: 'Tanpa Es', priceDelta: 0 },
-    ],
-  }
-  const isOriginalOrClassic = ['classic', 'original'].includes(
-    String(item.category || '').toLowerCase()
-  )
-  const toppingGroup = !isOriginalOrClassic
+  const sugarGroup = !isFoodOrSweets
+    ? resolved.find((g) => g.id === 'gula') || {
+        id: 'gula',
+        label: 'Tingkat Kemanisan',
+        choices: [
+          { id: 'normal', label: 'Normal (100%)', priceDelta: 0 },
+          { id: 'less', label: 'Sedikit (50%)', priceDelta: 0 },
+          { id: 'no', label: 'Tanpa Gula (0%)', priceDelta: 0 },
+        ],
+      }
+    : null
+
+  const iceGroup = !isFoodOrSweets
+    ? resolved.find((g) => g.id === 'es') || {
+        id: 'es',
+        label: 'Tingkat Es Batu',
+        choices: [
+          { id: 'normal', label: 'Normal Ice', priceDelta: 0 },
+          { id: 'less', label: 'Sedikit Es', priceDelta: 0 },
+          { id: 'no', label: 'Tanpa Es', priceDelta: 0 },
+        ],
+      }
+    : null
+
+  const toppingGroup = !isNoTopping
     ? resolved.find((g) => g.id === 'topping' || g.id === 'topping_tea' || g.type === 'multi') || {
         id: 'topping',
         label: 'Topping Tambahan',
@@ -114,6 +121,7 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
         ],
       }
     : null
+
 
   // Hitung harga per cup
   const selectedToppings = (toppingGroup && Array.isArray(rawSelection[toppingGroup.id]))
@@ -150,42 +158,48 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
   }
 
   function handleAddToCart() {
-    const sugarChoice =
-      sugarGroup?.choices.find((c) => (rawSelection.gula || []).includes(c.id)) ||
-      sugarGroup?.choices[0]
-    const iceChoice =
-      iceGroup?.choices.find((c) => (rawSelection.es || []).includes(c.id)) ||
-      iceGroup?.choices[0]
+    const customOptions = []
 
-    const customOptions = [
-      {
-        groupId: 'gula',
-        groupLabel: 'Tingkat Kemanisan',
-        choiceId: sugarChoice?.id || 'normal',
-        choiceLabel: sugarChoice?.label || 'Normal (100%)',
-        priceDelta: 0,
-      },
-      {
-        groupId: 'es',
-        groupLabel: 'Tingkat Es Batu',
-        choiceId: iceChoice?.id || 'normal',
-        choiceLabel: iceChoice?.label || 'Normal Ice',
-        priceDelta: 0,
-      },
-    ]
+    if (!isFoodOrSweets) {
+      const sugarChoice =
+        sugarGroup?.choices.find((c) => (rawSelection.gula || []).includes(c.id)) ||
+        sugarGroup?.choices[0]
+      const iceChoice =
+        iceGroup?.choices.find((c) => (rawSelection.es || []).includes(c.id)) ||
+        iceGroup?.choices[0]
 
-    // Toppings
-    if (toppingGroup && Array.isArray(rawSelection[toppingGroup.id])) {
-      for (const tid of rawSelection[toppingGroup.id]) {
-        const topChoice = toppingGroup.choices.find((c) => c.id === tid)
-        if (topChoice) {
-          customOptions.push({
-            groupId: 'topping',
-            groupLabel: 'Topping',
-            choiceId: topChoice.id,
-            choiceLabel: topChoice.label,
-            priceDelta: topChoice.priceDelta || 0,
-          })
+      if (sugarChoice) {
+        customOptions.push({
+          groupId: 'gula',
+          groupLabel: 'Tingkat Kemanisan',
+          choiceId: sugarChoice.id,
+          choiceLabel: sugarChoice.label || 'Normal (100%)',
+          priceDelta: 0,
+        })
+      }
+      if (iceChoice) {
+        customOptions.push({
+          groupId: 'es',
+          groupLabel: 'Tingkat Es Batu',
+          choiceId: iceChoice.id,
+          choiceLabel: iceChoice.label || 'Normal Ice',
+          priceDelta: 0,
+        })
+      }
+
+      // Toppings (hanya untuk kategori yang mengizinkan topping)
+      if (toppingGroup && Array.isArray(rawSelection[toppingGroup.id])) {
+        for (const tid of rawSelection[toppingGroup.id]) {
+          const topChoice = toppingGroup.choices.find((c) => c.id === tid)
+          if (topChoice) {
+            customOptions.push({
+              groupId: 'topping',
+              groupLabel: 'Topping',
+              choiceId: topChoice.id,
+              choiceLabel: topChoice.label,
+              priceDelta: topChoice.priceDelta || 0,
+            })
+          }
         }
       }
     }
@@ -199,6 +213,7 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
         priceDelta: 0,
       })
     }
+
 
     setAddedAnimation(true)
 
@@ -322,13 +337,15 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
 
               {/* Tag Info */}
               <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-outline-variant/30 mt-1">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-secondary text-[11px] font-medium">
-                  <span className="material-symbols-outlined text-[13px]">ac_unit</span>
-                  Iced Only
-                </span>
+                {!isFoodOrSweets && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-secondary text-[11px] font-medium">
+                    <span className="material-symbols-outlined text-[13px]">ac_unit</span>
+                    Iced Only
+                  </span>
+                )}
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant text-[11px] font-medium">
-                  <span className="material-symbols-outlined text-[13px]">local_drink</span>
-                  Cup 500ml
+                  <span className="material-symbols-outlined text-[13px]">{isFoodOrSweets ? 'bakery_dining' : 'local_drink'}</span>
+                  {isFoodOrSweets ? 'Fresh Snack' : 'Cup 500ml'}
                 </span>
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant text-[11px] font-medium">
                   <span className="material-symbols-outlined text-[13px]">timer</span>
@@ -483,14 +500,16 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
               </div>
             )}
 
-            {/* STEP 4: Catatan untuk Barista */}
+            {/* Catatan untuk Barista / Dapur */}
             <div className="bg-surface-container-lowest rounded-2xl p-4 border border-outline-variant/50 shadow-xs flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-surface-container text-on-surface-variant text-[11px] flex items-center justify-center font-bold">
-                    {toppingGroup ? '4' : '3'}
+                    {isFoodOrSweets ? '1' : toppingGroup ? '4' : '3'}
                   </span>
-                  <h4 className="font-bold text-sm text-on-surface">Catatan untuk Barista</h4>
+                  <h4 className="font-bold text-sm text-on-surface">
+                    {isFoodOrSweets ? 'Catatan Pesanan' : 'Catatan untuk Barista'}
+                  </h4>
                 </div>
                 <span className="text-[10px] text-secondary font-medium">Maks. 80 Karakter</span>
               </div>
@@ -499,7 +518,7 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
                 value={note}
                 onChange={(e) => setNote(e.target.value.slice(0, 80))}
                 maxLength={80}
-                placeholder="Contoh: Sedikit es dipisah, banyakin mint..."
+                placeholder={isFoodOrSweets ? 'Contoh: Hangatkan dulu, jangan terlalu garing...' : 'Contoh: Sedikit es dipisah, banyakin mint...'}
                 className="w-full bg-surface-container-low text-on-surface rounded-xl px-3.5 py-2 text-xs placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary border border-transparent focus:border-primary transition-all"
               />
             </div>

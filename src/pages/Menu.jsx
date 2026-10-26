@@ -144,7 +144,7 @@ export default function Menu() {
       const raw = (item.category || '').trim()
       if (raw) map.set(raw.toLowerCase(), formatCategoryLabel(raw))
     })
-    const list = [{ key: 'all', label: 'Semua Drinks' }]
+    const list = [{ key: 'all', label: 'Semua' }]
     map.forEach((label, key) => list.push({ key, label }))
     return list
   }, [drinkItems])
@@ -156,7 +156,7 @@ export default function Menu() {
       const raw = (item.category || '').trim()
       if (raw) map.set(raw.toLowerCase(), formatCategoryLabel(raw))
     })
-    const list = [{ key: 'all', label: 'Semua Food' }]
+    const list = [{ key: 'all', label: 'Semua' }]
     map.forEach((label, key) => list.push({ key, label }))
     return list
   }, [foodItems])

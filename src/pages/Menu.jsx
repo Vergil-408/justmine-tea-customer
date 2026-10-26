@@ -75,8 +75,8 @@ function MenuCard({ item, onSelect }) {
           )}
         </div>
         <div className="px-1">
-          <span className={`text-[11px] font-semibold ${isFoodCategory(item.category) ? 'text-primary' : 'text-tertiary'}`}>
-            {isFoodCategory(item.category) ? 'Bisa tambah catatan' : 'Bisa dikustomisasi'}
+          <span className={`text-[11px] font-semibold ${isFoodCategory(item) ? 'text-primary' : 'text-tertiary'}`}>
+            {isFoodCategory(item) ? 'Bisa tambah catatan' : 'Bisa dikustomisasi'}
           </span>
           <h2 className="font-serif text-base lg:text-xl font-semibold leading-tight text-on-surface mt-0.5">{item.name}</h2>
           <p className="text-[11px] lg:text-sm text-on-surface-variant leading-snug line-clamp-2 mt-1">{item.desc}</p>
@@ -127,13 +127,13 @@ export default function Menu() {
   const [sortBy, setSortBy] = useState('default')
   const [customizingItem, setCustomizingItem] = useState(null)
 
-  // Pisahkan item menjadi Drinks vs Food menggunakan isFoodCategory
+  // Pisahkan item menjadi Drinks vs Food menggunakan isFoodCategory (mendukung itemType & kategori)
   const drinkItems = useMemo(
-    () => items.filter((item) => !isFoodCategory(item.category)),
+    () => items.filter((item) => !isFoodCategory(item)),
     [items]
   )
   const foodItems = useMemo(
-    () => items.filter((item) => isFoodCategory(item.category)),
+    () => items.filter((item) => isFoodCategory(item)),
     [items]
   )
 

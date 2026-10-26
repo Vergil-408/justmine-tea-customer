@@ -81,7 +81,7 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
 
   if (!isOpen || !item) return null
 
-  const isFoodOrSweets = isFoodCategory(item.category)
+  const isFoodOrSweets = isFoodCategory(item)
   const isNoTopping = isFoodOrSweets || isSignatureCategory(item.category)
 
   // Pisahkan grup opsi: Gula, Es, Topping, Catatan

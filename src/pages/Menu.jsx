@@ -4,7 +4,7 @@ import { useMenuItems } from '../hooks/useMenuItems.js'
 import { useOptionGroups } from '../hooks/useOptionGroups.js'
 import { useCart } from '../context/CartContext.jsx'
 import { useCartSheet } from '../context/CartSheetContext.jsx'
-import { resolveOptions, getBasePrice } from '../utils/options.js'
+import { resolveOptions, getBasePrice, isFoodCategory } from '../utils/options.js'
 import MobileHeader from '../components/MobileHeader.jsx'
 import DesktopNav from '../components/DesktopNav.jsx'
 import BottomNav from '../components/BottomNav.jsx'
@@ -17,7 +17,22 @@ const KNOWN_CATEGORY_LABELS = {
   milktea: 'Milk Tea',
   coffee: 'Coffee Series',
   customizable: 'Customizable Tea',
+  'main course': 'Main Course',
+  maincourse: 'Main Course',
+  'main-course': 'Main Course',
+  main_course: 'Main Course',
+  snacks: 'Snacks',
+  snack: 'Snacks',
+  sweets: 'Sweets',
+  sweet: 'Sweets',
+  food: 'Makanan',
+  makanan: 'Makanan',
+  dessert: 'Dessert',
+  desserts: 'Dessert',
+  pastry: 'Pastry & Bakery',
+  bakery: 'Pastry & Bakery',
 }
+
 
 function formatCategoryLabel(raw) {
   if (!raw) return ''
@@ -57,7 +72,9 @@ function MenuCard({ item, onSelect }) {
           )}
         </div>
         <div className="px-1">
-          <span className="text-[11px] font-semibold text-tertiary">Bisa dikustomisasi</span>
+          <span className={`text-[11px] font-semibold ${isFoodCategory(item.category) ? 'text-primary' : 'text-tertiary'}`}>
+            {isFoodCategory(item.category) ? 'Bisa tambah catatan' : 'Bisa dikustomisasi'}
+          </span>
           <h2 className="font-serif text-base lg:text-xl font-semibold leading-tight text-on-surface mt-0.5">{item.name}</h2>
           <p className="text-[11px] lg:text-sm text-on-surface-variant leading-snug line-clamp-2 mt-1">{item.desc}</p>
         </div>
@@ -164,7 +181,7 @@ export default function Menu() {
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari teh atau blend..."
+                placeholder="Cari menu, teh, atau makanan..."
                 className="w-full bg-transparent text-sm lg:text-base text-on-surface placeholder:text-outline focus:outline-none"
               />
             </label>

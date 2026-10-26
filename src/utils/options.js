@@ -27,6 +27,27 @@ function pickDefault(group, override, choices) {
   return null
 }
 
+// Deteksi apakah kategori merupakan makanan / snack / dessert / main course
+export function isFoodCategory(catRaw) {
+  if (!catRaw) return false
+  const cat = String(catRaw).toLowerCase().trim()
+  const foodKeywords = [
+    'food', 'makan', 'snack', 'sweet', 'pastry', 'bakery', 'dessert',
+    'main', 'course', 'bites', 'meal', 'dish', 'cake', 'toast', 'roti',
+    'nasi', 'mie', 'noodle', 'rice', 'appetizer', 'side', 'dimsum', 'finger',
+    'goreng', 'panggang', 'bakso', 'ayam', 'daging', 'sate', 'platter', 'fries'
+  ]
+  return foodKeywords.some((kw) => cat.includes(kw))
+}
+
+// Deteksi apakah kategori teh signature / classic / coffee (tanpa topping)
+export function isSignatureCategory(catRaw) {
+  if (!catRaw) return false
+  const cat = String(catRaw).toLowerCase().trim()
+  const sigKeywords = ['signature', 'classic', 'original', 'coffee', 'kopi', 'pure', 'artisanal']
+  return sigKeywords.some((kw) => cat.includes(kw))
+}
+
 // Menggabungkan optionGroupIds (urutan tampil) + optionOverrides.
 // Hasil selalu memiliki opsi gula & es untuk minuman apa pun dari database.
 export function resolveOptions(item, groups = []) {
@@ -34,9 +55,8 @@ export function resolveOptions(item, groups = []) {
 
   const effectiveGroups = groups && groups.length > 0 ? groups : seedOptionGroups
 
-  const cat = String(item.category || '').toLowerCase()
-  const isFood = ['sweets', 'sweet', 'makanan', 'snack', 'food', 'pastry', 'bakery', 'dessert'].includes(cat)
-  const isSignature = ['signature', 'classic', 'original', 'coffee'].includes(cat)
+  const isFood = isFoodCategory(item.category)
+  const isSignature = isSignatureCategory(item.category)
 
   let ids = Array.isArray(item.optionGroupIds) && item.optionGroupIds.length > 0 ? item.optionGroupIds : null
   if (!ids) {
@@ -55,6 +75,7 @@ export function resolveOptions(item, groups = []) {
       ids = ids.filter((id) => id !== 'topping' && id !== 'topping_tea')
     }
   }
+
 
 
   const byId = new Map(effectiveGroups.map((g) => [g.id, g]))
@@ -593,8 +614,7 @@ export function getItemCustomizationDetails(item) {
   }
 
   // 6. Default standard badges untuk menu minuman jika belum memiliki kustomisasi khusus di database
-  const cat = String(item?.category || '').toLowerCase()
-  const isFood = ['sweets', 'sweet', 'makanan', 'snack', 'food', 'pastry', 'bakery', 'dessert'].includes(cat)
+  const isFood = isFoodCategory(item?.category)
 
   if (badges.length === 0 && !item?.isBundle && !isFood) {
     badges.push({

@@ -8,6 +8,8 @@ import {
   buildSelectedOptions,
   computeUnitPrice,
   getBasePrice,
+  isFoodCategory,
+  isSignatureCategory,
 } from '../utils/options.js'
 
 function rupiah(n) {
@@ -79,9 +81,8 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
 
   if (!isOpen || !item) return null
 
-  const categoryLower = String(item.category || '').toLowerCase()
-  const isFoodOrSweets = ['sweets', 'sweet', 'makanan', 'snack', 'food', 'pastry', 'bakery', 'dessert'].includes(categoryLower)
-  const isNoTopping = ['signature', 'classic', 'original', 'coffee', 'sweets', 'sweet', 'makanan', 'snack', 'food', 'pastry', 'bakery', 'dessert'].includes(categoryLower)
+  const isFoodOrSweets = isFoodCategory(item.category)
+  const isNoTopping = isFoodOrSweets || isSignatureCategory(item.category)
 
   // Pisahkan grup opsi: Gula, Es, Topping, Catatan
   const sugarGroup = !isFoodOrSweets

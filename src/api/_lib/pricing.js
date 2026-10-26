@@ -6,6 +6,7 @@ import {
   validateSelection,
   buildSelectedOptions,
   computeUnitPrice,
+  getBasePrice,
 } from '../../src/utils/options.js'
 
 export class OrderError extends Error {
@@ -50,12 +51,23 @@ export function priceCart(cartItems, menuById, groups) {
     if (menu.inStock === false) throw new OrderError(`${menu.name} sedang habis.`, 409)
 
     const resolved = resolveOptions(menu, groups)
-    const selection = normalizeSelection(resolved, selectionFromOptions(line.selectedOptions))
-    const { valid, errors } = validateSelection(resolved, selection)
-    if (!valid) throw new OrderError(`${menu.name}: ${errors[0].message}`, 409)
+    let selectedOptions = []
+    let price = getBasePrice(menu)
 
-    const selectedOptions = buildSelectedOptions(resolved, selection)
-    const price = computeUnitPrice(menu, selectedOptions)
+    if (resolved && resolved.length > 0) {
+      const selection = normalizeSelection(resolved, selectionFromOptions(line.selectedOptions))
+      const { valid, errors } = validateSelection(resolved, selection)
+      if (!valid) throw new OrderError(`${menu.name}: ${errors[0].message}`, 409)
+      selectedOptions = buildSelectedOptions(resolved, selection)
+      price = computeUnitPrice(menu, selectedOptions)
+    } else if (Array.isArray(line?.selectedOptions) && line.selectedOptions.length > 0) {
+      // Pertahankan snapshot kustomisasi user dari client (gula, es, topping, catatan)
+      selectedOptions = line.selectedOptions
+      price = computeUnitPrice(menu, selectedOptions)
+    } else {
+      price = getBasePrice(menu)
+    }
+
     if (!Number.isInteger(price) || price <= 0) throw new OrderError(`Harga ${menu.name} tidak valid.`, 500)
 
     items.push({

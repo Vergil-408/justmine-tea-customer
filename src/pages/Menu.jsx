@@ -17,6 +17,7 @@ const KNOWN_CATEGORY_LABELS = {
   milktea: 'Milk Tea',
   coffee: 'Coffee Series',
   customizable: 'Customizable Tea',
+  tropical: 'Tropical',
   'main course': 'Main Course',
   maincourse: 'Main Course',
   'main-course': 'Main Course',
@@ -25,8 +26,10 @@ const KNOWN_CATEGORY_LABELS = {
   snack: 'Snacks',
   sweets: 'Sweets',
   sweet: 'Sweets',
-  food: 'Makanan',
-  makanan: 'Makanan',
+  food: 'Food',
+  makanan: 'Food',
+  minuman: 'Drinks',
+  drinks: 'Drinks',
   dessert: 'Dessert',
   desserts: 'Dessert',
   pastry: 'Pastry & Bakery',
@@ -107,53 +110,96 @@ export default function Menu() {
   const { items, usingSeed } = useMenuItems()
   const { groups } = useOptionGroups()
   const [searchParams] = useSearchParams()
-  const initialFilter = searchParams.get('filter')
-  const [activeFilter, setActiveFilter] = useState(initialFilter || 'semua')
 
-  // Generate dynamic filters strictly based on categories present in items from database
-  const filters = useMemo(() => {
-    const catMap = new Map()
-    items.forEach((item) => {
-      const raw = (item.category || '').trim()
-      if (!raw) return
-      const key = raw.toLowerCase()
-      if (!catMap.has(key)) {
-        catMap.set(key, formatCategoryLabel(raw))
-      }
-    })
+  // Tab Level 1: 'all' | 'drinks' | 'food'
+  const initialFilter = (searchParams.get('filter') || '').toLowerCase()
+  const initialMainTab =
+    initialFilter === 'drinks' || initialFilter === 'minuman'
+      ? 'drinks'
+      : initialFilter === 'food' || initialFilter === 'makanan'
+      ? 'food'
+      : 'all'
 
-    const list = [{ key: 'semua', label: 'Semua' }]
-    catMap.forEach((label, key) => {
-      list.push({ key, label })
-    })
-    return list
-  }, [items])
-
-  useEffect(() => {
-    if (activeFilter !== 'semua' && filters.length > 1) {
-      const exists = filters.some((f) => f.key === activeFilter)
-      if (!exists) setActiveFilter('semua')
-    }
-  }, [filters, activeFilter])
-
+  const [mainTab, setMainTab] = useState(initialMainTab)
+  const [drinkSubFilter, setDrinkSubFilter] = useState('all')
+  const [foodSubFilter, setFoodSubFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('default')
   const [customizingItem, setCustomizingItem] = useState(null)
 
-  const matchesFilter = (item, key) =>
-    key === 'semua' ? true : String(item.category || '').trim().toLowerCase() === key
+  // Pisahkan item menjadi Drinks vs Food menggunakan isFoodCategory
+  const drinkItems = useMemo(
+    () => items.filter((item) => !isFoodCategory(item.category)),
+    [items]
+  )
+  const foodItems = useMemo(
+    () => items.filter((item) => isFoodCategory(item.category)),
+    [items]
+  )
 
-  const filtered = items.filter((item) => {
-    const matchSearch = (item.name || '').toLowerCase().includes(search.toLowerCase())
-    return matchesFilter(item, activeFilter) && matchSearch
-  })
+  // Sub-kategori Drinks dinamis dari database
+  const drinkCategories = useMemo(() => {
+    const map = new Map()
+    drinkItems.forEach((item) => {
+      const raw = (item.category || '').trim()
+      if (raw) map.set(raw.toLowerCase(), formatCategoryLabel(raw))
+    })
+    const list = [{ key: 'all', label: 'Semua Drinks' }]
+    map.forEach((label, key) => list.push({ key, label }))
+    return list
+  }, [drinkItems])
 
-  const visible =
-    sortBy === 'harga-rendah' ? [...filtered].sort((a, b) => getBasePrice(a) - getBasePrice(b))
-    : sortBy === 'harga-tinggi' ? [...filtered].sort((a, b) => getBasePrice(b) - getBasePrice(a))
-    : filtered
+  // Sub-kategori Food dinamis dari database
+  const foodCategories = useMemo(() => {
+    const map = new Map()
+    foodItems.forEach((item) => {
+      const raw = (item.category || '').trim()
+      if (raw) map.set(raw.toLowerCase(), formatCategoryLabel(raw))
+    })
+    const list = [{ key: 'all', label: 'Semua Food' }]
+    map.forEach((label, key) => list.push({ key, label }))
+    return list
+  }, [foodItems])
 
-  // Saat pelanggan klik menu atau icon +: Buka CustomizeModal (kustomisasi manis, es, topping, catatan)
+  // Helper pencarian & pengurutan
+  const processItems = (list, subFilter) => {
+    let result = list
+    if (subFilter !== 'all') {
+      result = result.filter(
+        (item) => String(item.category || '').trim().toLowerCase() === subFilter
+      )
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      result = result.filter(
+        (item) =>
+          (item.name || '').toLowerCase().includes(q) ||
+          (item.desc || '').toLowerCase().includes(q)
+      )
+    }
+    if (sortBy === 'harga-rendah') {
+      return [...result].sort((a, b) => getBasePrice(a) - getBasePrice(b))
+    }
+    if (sortBy === 'harga-tinggi') {
+      return [...result].sort((a, b) => getBasePrice(b) - getBasePrice(a))
+    }
+    return result
+  }
+
+  const visibleDrinks = useMemo(
+    () => processItems(drinkItems, drinkSubFilter),
+    [drinkItems, drinkSubFilter, search, sortBy]
+  )
+
+  const visibleFood = useMemo(
+    () => processItems(foodItems, foodSubFilter),
+    [foodItems, foodSubFilter, search, sortBy]
+  )
+
+  const totalVisible =
+    (mainTab === 'food' ? 0 : visibleDrinks.length) +
+    (mainTab === 'drinks' ? 0 : visibleFood.length)
+
   function handleSelect(item) {
     if (item.inStock === false) return
     setCustomizingItem(item)
@@ -167,13 +213,20 @@ export default function Menu() {
       <DesktopNav />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 lg:pt-10 pb-40 lg:pb-24">
+        {/* Header Hero */}
         <section className="mb-5 lg:mb-8">
-          <p className="text-xs font-semibold text-primary-container mb-1">Katalog teh</p>
-          <h1 className="font-serif text-[32px] sm:text-5xl lg:text-6xl font-medium leading-[1.1] text-on-surface">Temukan favoritmu.</h1>
-          <p className="text-sm lg:text-lg text-on-surface-variant mt-1.5">Semua dibuat segar, sesuai suasana hatimu.</p>
+          <p className="text-xs font-semibold text-primary-container mb-1">Katalog Menu</p>
+          <h1 className="font-serif text-[32px] sm:text-5xl lg:text-6xl font-medium leading-[1.1] text-on-surface">
+            Temukan favoritmu.
+          </h1>
+          <p className="text-sm lg:text-lg text-on-surface-variant mt-1.5">
+            Semua dibuat & disajikan segar, sesuai suasana hatimu.
+          </p>
         </section>
 
-        <div className="sticky top-16 lg:static z-20 bg-background/95 backdrop-blur-md -mx-4 px-4 sm:mx-0 sm:px-0 py-2 space-y-3 mb-4 lg:mb-8">
+        {/* Sticky Controls: Pencarian, Urutan, & Tab Level 1 [ Semua ] [ Drinks ] [ Food ] */}
+        <div className="sticky top-16 lg:static z-20 bg-background/95 backdrop-blur-md -mx-4 px-4 sm:mx-0 sm:px-0 py-2.5 space-y-3 mb-6 lg:mb-10">
+          {/* Baris Pencarian & Sort */}
           <div className="flex items-center gap-2">
             <label className="flex-1 flex items-center gap-3 bg-surface-container-lowest border border-outline-variant rounded-xl lg:rounded-2xl px-4 h-11 lg:h-14 shadow-sm focus-within:border-primary-container focus-within:ring-1 focus-within:ring-primary-container">
               <span className="material-symbols-outlined text-outline text-[20px]">search</span>
@@ -184,6 +237,15 @@ export default function Menu() {
                 placeholder="Cari menu, teh, atau makanan..."
                 className="w-full bg-transparent text-sm lg:text-base text-on-surface placeholder:text-outline focus:outline-none"
               />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  className="text-outline hover:text-on-surface"
+                >
+                  <span className="material-symbols-outlined text-[18px]">close</span>
+                </button>
+              )}
             </label>
             <label className="flex items-center gap-1 bg-surface-container-lowest border border-outline-variant rounded-xl lg:rounded-2xl pl-3 pr-1 h-11 lg:h-14 shadow-sm">
               <span className="material-symbols-outlined text-on-surface-variant text-[20px]">sort</span>
@@ -200,59 +262,224 @@ export default function Menu() {
             </label>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {filters.map((f) => {
-              const active = activeFilter === f.key
-              const count = items.filter((i) => matchesFilter(i, f.key)).length
-              return (
-                <button
-                  key={f.key}
-                  type="button"
-                  onClick={() => setActiveFilter(f.key)}
-                  className={`shrink-0 inline-flex items-center gap-2 px-4 lg:px-5 h-9 lg:h-11 rounded-full text-sm font-semibold border transition-colors ${
-                    active
-                      ? 'bg-secondary-container text-on-secondary-container border-primary-container'
-                      : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant hover:border-primary-container'
-                  }`}
-                >
-                  {active && <span className="material-symbols-outlined text-[16px]">check</span>}
-                  {f.label}
-                  <span className="text-[11px] opacity-70">{count}</span>
-                </button>
-              )
-            })}
+          {/* TAB UTAMA (Level 1): [ Semua ]  [ Drinks ]  [ Food ] */}
+          <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pt-0.5">
+            <button
+              type="button"
+              onClick={() => setMainTab('all')}
+              className={`shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold border transition-all ${
+                mainTab === 'all'
+                  ? 'bg-primary-container text-on-primary border-primary-container shadow-sm'
+                  : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant/60 hover:border-primary-container'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">apps</span>
+              <span>Semua</span>
+              <span
+                className={`text-[11px] px-2 py-0.5 rounded-full ${
+                  mainTab === 'all' ? 'bg-white/20 text-white' : 'bg-surface-container text-on-surface-variant'
+                }`}
+              >
+                {items.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMainTab('drinks')}
+              className={`shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold border transition-all ${
+                mainTab === 'drinks'
+                  ? 'bg-primary-container text-on-primary border-primary-container shadow-sm'
+                  : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant/60 hover:border-primary-container'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">local_cafe</span>
+              <span>Drinks</span>
+              <span
+                className={`text-[11px] px-2 py-0.5 rounded-full ${
+                  mainTab === 'drinks' ? 'bg-white/20 text-white' : 'bg-surface-container text-on-surface-variant'
+                }`}
+              >
+                {drinkItems.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMainTab('food')}
+              className={`shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold border transition-all ${
+                mainTab === 'food'
+                  ? 'bg-primary-container text-on-primary border-primary-container shadow-sm'
+                  : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant/60 hover:border-primary-container'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">lunch_dining</span>
+              <span>Food</span>
+              <span
+                className={`text-[11px] px-2 py-0.5 rounded-full ${
+                  mainTab === 'food' ? 'bg-white/20 text-white' : 'bg-surface-container text-on-surface-variant'
+                }`}
+              >
+                {foodItems.length}
+              </span>
+            </button>
           </div>
         </div>
 
         {usingSeed && (
-          <p className="text-[11px] lg:text-xs text-on-surface-variant mb-3">Menampilkan data contoh — belum ada data dari App Kasir.</p>
+          <p className="text-[11px] lg:text-xs text-on-surface-variant mb-4">
+            Menampilkan data contoh — belum ada data dari App Kasir.
+          </p>
         )}
 
-        {visible.length === 0 ? (
-          <div className="text-center py-16 text-on-surface-variant">
-            <span className="material-symbols-outlined text-[40px] text-outline">search_off</span>
-            <p className="mt-2 text-sm">Belum ada menu yang cocok dengan pencarianmu.</p>
+        {totalVisible === 0 ? (
+          <div className="text-center py-16 text-on-surface-variant bg-surface-container-lowest rounded-3xl border border-dashed border-outline-variant">
+            <span className="material-symbols-outlined text-[48px] text-outline">search_off</span>
+            <p className="mt-2 text-base font-semibold text-on-surface">Tidak ada menu yang sesuai</p>
+            <p className="text-xs text-on-surface-variant mt-1">Coba kata kunci pencarian lain atau ubah filter kategori.</p>
             <button
               type="button"
               onClick={() => {
                 setSearch('')
-                setActiveFilter('semua')
+                setMainTab('all')
+                setDrinkSubFilter('all')
+                setFoodSubFilter('all')
               }}
-              className="mt-3 text-sm font-semibold text-primary-container underline underline-offset-4"
+              className="mt-4 px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors"
             >
-              Tampilkan semua menu
+              Tampilkan Semua Menu
             </button>
           </div>
         ) : (
-          <section aria-label="Daftar menu teh" className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 lg:gap-6">
-            {visible.map((item) => (
-              <MenuCard
-                key={item.id}
-                item={item}
-                onSelect={handleSelect}
-              />
-            ))}
-          </section>
+          <div className="space-y-12">
+            {/* ================= SECTION 1: DRINKS ================= */}
+            {(mainTab === 'all' || mainTab === 'drinks') && (
+              <section aria-label="Kategori Minuman (Drinks)" className="space-y-4">
+                {/* Header Section Drinks */}
+                <div className="flex items-center justify-between border-b border-outline-variant/40 pb-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                      <span className="material-symbols-outlined text-[20px]">local_cafe</span>
+                    </div>
+                    <div>
+                      <h2 className="font-serif text-xl sm:text-2xl font-bold text-on-surface">Drinks</h2>
+                      <p className="text-xs text-on-surface-variant">Aneka seduhan teh artisan & racikan segar</p>
+                    </div>
+                  </div>
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-secondary-container/50 text-on-secondary-container font-bold">
+                    {visibleDrinks.length} menu
+                  </span>
+                </div>
+
+                {/* Sub-Filter Chips Drinks: [ Semua Drinks ] [ Tropical ] [ Signature Tea ] ... */}
+                {drinkCategories.length > 1 && (
+                  <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-1">
+                    {drinkCategories.map((sub) => {
+                      const active = drinkSubFilter === sub.key
+                      const count =
+                        sub.key === 'all'
+                          ? drinkItems.length
+                          : drinkItems.filter((i) => (i.category || '').toLowerCase() === sub.key).length
+                      return (
+                        <button
+                          key={sub.key}
+                          type="button"
+                          onClick={() => setDrinkSubFilter(sub.key)}
+                          className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                            active
+                              ? 'bg-secondary-container text-on-secondary-container border-primary-container shadow-xs'
+                              : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant/60 hover:border-primary-container'
+                          }`}
+                        >
+                          {active && <span className="material-symbols-outlined text-[14px]">check</span>}
+                          <span>{sub.label}</span>
+                          <span className="text-[10px] opacity-70">({count})</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {/* Grid Produk Drinks */}
+                {visibleDrinks.length === 0 ? (
+                  <div className="p-8 text-center bg-surface-container-lowest rounded-2xl border border-dashed border-outline-variant text-on-surface-variant text-xs">
+                    Tidak ada menu minuman yang sesuai dengan filter ini.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 lg:gap-6">
+                    {visibleDrinks.map((item) => (
+                      <MenuCard key={item.id} item={item} onSelect={handleSelect} />
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* ================= SECTION 2: FOOD ================= */}
+            {(mainTab === 'all' || mainTab === 'food') && (foodItems.length > 0 || mainTab === 'food') && (
+              <section aria-label="Kategori Makanan (Food)" className="space-y-4 pt-2">
+                {/* Header Section Food */}
+                <div className="flex items-center justify-between border-b border-outline-variant/40 pb-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center">
+                      <span className="material-symbols-outlined text-[20px]">lunch_dining</span>
+                    </div>
+                    <div>
+                      <h2 className="font-serif text-xl sm:text-2xl font-bold text-on-surface">Food</h2>
+                      <p className="text-xs text-on-surface-variant">Main course lezat, hidangan santai & aneka snacks</p>
+                    </div>
+                  </div>
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-bold">
+                    {visibleFood.length} menu
+                  </span>
+                </div>
+
+                {/* Sub-Filter Chips Food: [ Semua Food ] [ Snacks ] [ Main Course ] ... */}
+                {foodCategories.length > 1 && (
+                  <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-1">
+                    {foodCategories.map((sub) => {
+                      const active = foodSubFilter === sub.key
+                      const count =
+                        sub.key === 'all'
+                          ? foodItems.length
+                          : foodItems.filter((i) => (i.category || '').toLowerCase() === sub.key).length
+                      return (
+                        <button
+                          key={sub.key}
+                          type="button"
+                          onClick={() => setFoodSubFilter(sub.key)}
+                          className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                            active
+                              ? 'bg-secondary-container text-on-secondary-container border-primary-container shadow-xs'
+                              : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant/60 hover:border-primary-container'
+                          }`}
+                        >
+                          {active && <span className="material-symbols-outlined text-[14px]">check</span>}
+                          <span>{sub.label}</span>
+                          <span className="text-[10px] opacity-70">({count})</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {/* Grid Produk Food */}
+                {visibleFood.length === 0 ? (
+                  <div className="p-8 text-center bg-surface-container-lowest rounded-2xl border border-dashed border-outline-variant text-on-surface-variant text-xs">
+                    {foodItems.length === 0
+                      ? 'Belum ada menu makanan yang tersedia di katalog.'
+                      : 'Tidak ada makanan yang sesuai dengan filter ini.'}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 lg:gap-6">
+                    {visibleFood.map((item) => (
+                      <MenuCard key={item.id} item={item} onSelect={handleSelect} />
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+          </div>
         )}
       </main>
 

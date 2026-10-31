@@ -10,7 +10,7 @@ import { db } from './firebase.js'
 export const createOrder = async (orderData) => {
   const docRef = await addDoc(collection(db, 'orders'), {
     ...orderData,
-    status: orderData.status || 'menunggu', // menunggu -> diproses -> siap
+    status: orderData.status || 'diproses', // diproses -> siap -> selesai
     createdAt: serverTimestamp(),
   })
   return docRef.id

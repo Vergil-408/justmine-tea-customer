@@ -108,7 +108,7 @@ export default async function handler(req, res) {
         total: subtotal,
         paymentMethod: METHODS[body.paymentMethod],
         paymentStatus: 'belum_dibayar',
-        status: 'menunggu',
+        status: 'diproses',
         clientRequestId,
       }),
     })

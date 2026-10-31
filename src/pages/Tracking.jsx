@@ -4,9 +4,9 @@ import { doc, onSnapshot, collection, query, where, orderBy } from 'firebase/fir
 import { db } from '../api/firebase.js'
 
 const steps = [
-  { key: 'menunggu', label: 'Menunggu', icon: '⏳' },
   { key: 'diproses', label: 'Diproses', icon: '🍵' },
   { key: 'siap', label: 'Siap Diambil', icon: '🔔' },
+  { key: 'selesai', label: 'Selesai', icon: '✨' },
 ]
 
 const paymentIcons = {
@@ -97,7 +97,7 @@ export default function Tracking() {
   const isCancelled = order.status === 'dibatalkan'
   const isDone = order.status === 'selesai'
   // Buat progress bar: 'selesai' dianggap sama kayak sudah lewat semua step.
-  const currentIndex = isDone ? steps.length : steps.findIndex((s) => s.key === order.status)
+  const currentIndex = isDone ? steps.length : Math.max(0, steps.findIndex((s) => s.key === order.status))
   const estimateMinutes = queuePosition ? queuePosition * 4 : null
   const itemsTotal = order.items.reduce((sum, it) => sum + it.price * it.qty, 0)
 

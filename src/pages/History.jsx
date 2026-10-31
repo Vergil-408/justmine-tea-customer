@@ -22,7 +22,7 @@ const STATUS = {
 }
 
 const ACTIVE_STATUS = ['menunggu', 'diproses', 'siap']
-const STEPS = ['menunggu', 'diproses', 'siap']
+const STEPS = ['diproses', 'siap', 'selesai']
 const ORDER_TYPE_LABEL = { 'dine-in': 'Dine-in', takeaway: 'Takeaway', delivery: 'Delivery' }
 
 const rupiah = (n) => 'Rp' + (n ?? 0).toLocaleString('id-ID')

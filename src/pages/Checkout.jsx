@@ -82,9 +82,14 @@ export default function Checkout() {
     const unsub = onSnapshot(
       doc(db, 'orders', order.orderId),
       (snap) => {
-        const status = snap.data()?.paymentStatus
-        if (status === 'dibayar') setStage('success')
-        else if (status === 'kedaluwarsa' || status === 'gagal') setStage('expired')
+        const data = snap.data()
+        const pStatus = data?.paymentStatus
+        const oStatus = data?.status
+        if (pStatus === 'dibayar') {
+          setStage('success')
+        } else if (pStatus === 'kedaluwarsa' || pStatus === 'gagal' || oStatus === 'dibatalkan') {
+          setStage('expired')
+        }
       },
       (err) => console.warn('Gagal memantau pembayaran:', err)
     )
@@ -98,7 +103,17 @@ export default function Checkout() {
   // Hitung mundur tampilan (kedaluwarsa yang sebenarnya diputuskan Midtrans).
   useEffect(() => {
     if (stage !== 'qris' || !order?.expiresAt) return undefined
-    const tick = () => setSecondsLeft(Math.round((order.expiresAt - Date.now()) / 1000))
+    const tick = () => {
+      const remaining = Math.round((order.expiresAt - Date.now()) / 1000)
+      setSecondsLeft(remaining)
+      if (remaining <= 0) {
+        syncPayment(order.orderId).catch(() => {})
+        // Beri toleransi 5 detik sebelum mengalihkan tampilan ke expired
+        if (remaining <= -5) {
+          setStage('expired')
+        }
+      }
+    }
     tick()
     const t = setInterval(tick, 1000)
     return () => clearInterval(t)
@@ -218,13 +233,32 @@ export default function Checkout() {
   if (stage === 'expired') {
     return (
       <Shell title="Pembayaran">
-        <main className="max-w-xl mx-auto px-4 py-16 flex flex-col items-center gap-3 text-center">
-          <span className="material-symbols-outlined text-[44px] text-error">timer_off</span>
-          <h2 className="text-xl font-bold">Pembayaran tidak selesai</h2>
-          <p className="text-sm text-on-surface-variant">Kode QR sudah kedaluwarsa atau pembayaran gagal. Keranjangmu masih utuh.</p>
-          <button type="button" onClick={retryPayment} className="mt-2 px-6 py-3 rounded-full bg-primary text-white text-sm font-semibold">
-            Buat pembayaran baru
-          </button>
+        <main className="max-w-xl mx-auto px-4 py-16 flex flex-col items-center gap-4 text-center">
+          <div className="w-16 h-16 rounded-full bg-error/10 text-error flex items-center justify-center">
+            <span className="material-symbols-outlined text-[36px]">timer_off</span>
+          </div>
+          <div className="space-y-1">
+            <h2 className="text-xl font-bold text-on-surface">Waktu Pembayaran Habis</h2>
+            <p className="text-sm text-on-surface-variant max-w-sm">
+              Kode QRIS sudah kedaluwarsa karena tidak dibayar dalam 15 menit. Pesanan ini otomatis dibatalkan, namun keranjangmu masih tersimpan aman.
+            </p>
+          </div>
+          <div className="pt-2 w-full max-w-xs space-y-2.5">
+            <button
+              type="button"
+              onClick={retryPayment}
+              className="w-full py-3.5 rounded-full bg-primary hover:bg-primary-container text-white text-sm font-bold shadow-sm transition-all"
+            >
+              Buat QRIS Baru
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/menu')}
+              className="w-full py-3 rounded-full border border-outline-variant text-on-surface hover:bg-surface-container text-xs font-semibold transition-all"
+            >
+              Kembali ke Menu
+            </button>
+          </div>
         </main>
       </Shell>
     )

@@ -60,7 +60,10 @@ export async function applyPaymentStatus(db, orderId, statusData, { mapStatus, s
       'payment.updatedAt': serverTimestamp,
     }
     if (next === 'dibayar') patch.paidAt = serverTimestamp
-    if ((next === 'kedaluwarsa' || next === 'gagal') && order.status === 'menunggu') patch.status = 'dibatalkan'
+    if ((next === 'kedaluwarsa' || next === 'gagal') && (order.status === 'menunggu' || order.status === 'diproses')) {
+      patch.status = 'dibatalkan'
+      patch.cancelledReason = next === 'kedaluwarsa' ? 'QRIS kedaluwarsa (tidak dibayar dalam 15 menit)' : 'Pembayaran gagal'
+    }
 
     tx.update(ref, patch)
     return { applied: true, paymentStatus: next }

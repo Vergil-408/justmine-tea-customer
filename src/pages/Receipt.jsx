@@ -78,7 +78,10 @@ export default function Receipt() {
   const items = Array.isArray(order.items) ? order.items : []
   const itemsTotal = items.reduce((sum, it) => sum + (it.price || 0) * (it.qty || 1), 0)
   const totalAmount = order.total ?? itemsTotal
-  const pointsEarned = Math.floor(totalAmount / 1000)
+  const pointsEarned = order.pointsEarned ?? Math.floor(totalAmount / 1000)
+  const isCash = (order.paymentMethod || '').toLowerCase().includes('tunai') || (order.paymentMethod || '').toLowerCase().includes('cash')
+  const cashTendered = order.cashTendered ?? null
+  const cashChange = order.change ?? null
 
   return (
     <div className="min-h-screen bg-[#F3F4F6] font-sans text-neutral-900 pb-16 print:bg-white print:p-0">
@@ -225,6 +228,18 @@ export default function Receipt() {
               <span>Metode Bayar:</span>
               <span className="font-bold">{order.paymentMethod || 'QRIS Dinamis (BCA/Gopay)'}</span>
             </div>
+            {isCash && cashTendered != null && (
+              <div className="flex justify-between items-center">
+                <span>Uang Diterima:</span>
+                <span className="font-bold">Rp {Number(cashTendered).toLocaleString('id-ID')}</span>
+              </div>
+            )}
+            {isCash && cashChange != null && (
+              <div className="flex justify-between items-center font-black">
+                <span>KEMBALIAN  :</span>
+                <span>Rp {Number(cashChange).toLocaleString('id-ID')}</span>
+              </div>
+            )}
             <div className="flex justify-between items-center">
               <span>Status      :</span>
               <span
@@ -250,6 +265,11 @@ export default function Receipt() {
             <p className="text-[11px] font-bold text-black">
               Dapatkan {pointsEarned} Poin Melati untuk transaksi ini!
             </p>
+            {order.currentPoints != null && (
+              <p className="text-[10px] text-neutral-600">
+                Total Poin Member: <span className="font-bold">{order.currentPoints} Poin</span>
+              </p>
+            )}
             <p className="text-[9.5px] text-neutral-600 leading-tight italic">
               Tunjukkan struk digital ini ke Barista untuk klaim poin member.
             </p>

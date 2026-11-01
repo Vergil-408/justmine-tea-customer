@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useTable } from '../context/TableContext.jsx'
 import { addGuestOrder } from '../utils/guestOrders.js'
 import { formatItemOptions } from '../utils/options.js'
+import TeaLoader from '../components/TeaLoader.jsx'
 
 const SANDBOX_GUIDE = 'https://docs.midtrans.com/docs/testing-payment-on-sandbox'
 const POLL_MS = 5000
@@ -232,9 +233,8 @@ export default function Checkout() {
   if (authLoading) {
     return (
       <Shell title="Pembayaran">
-        <main className="max-w-xl mx-auto px-4 py-16 text-center">
-          <div className="w-8 h-8 rounded-full border-2 border-outline-variant border-t-primary animate-spin mx-auto mb-3" />
-          <p className="text-sm text-on-surface-variant">Memeriksa status akun member…</p>
+        <main className="max-w-xl mx-auto px-4 py-20 flex justify-center">
+          <TeaLoader message="Memeriksa status akun..." submessage="Menyiapkan meja & keranjang pesanan" />
         </main>
       </Shell>
     )
@@ -358,6 +358,14 @@ export default function Checkout() {
 
         {error && <p role="alert" className="text-sm text-error font-medium">{error}</p>}
       </main>
+
+      {submitting && (
+        <TeaLoader
+          overlay
+          message="Memproses pesananmu..."
+          submessage="Menghubungkan ke sistem dapur Justmine Tea. Mohon jangan tutup halaman ini."
+        />
+      )}
 
       <div className="fixed bottom-0 inset-x-0 z-40 bg-background border-t border-outline-variant/50 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
         <div className="max-w-xl mx-auto px-4 pt-3 pb-5">

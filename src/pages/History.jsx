@@ -400,9 +400,25 @@ export default function History() {
 
     if (loading) {
       return (
-        <div className="space-y-3">
+        <div className="space-y-4" role="status" aria-label="Memuat riwayat pesanan...">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-40 animate-pulse rounded-2xl border border-outline-variant/60 bg-surface-container" />
+            <div
+              key={i}
+              className="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-4 space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <div className="h-4 w-32 rounded-md bg-surface-container skeleton-shimmer" />
+                <div className="h-6 w-20 rounded-full bg-surface-container skeleton-shimmer" />
+              </div>
+              <div className="space-y-2 py-1">
+                <div className="h-3.5 w-3/4 rounded-md bg-surface-container/80 skeleton-shimmer" />
+                <div className="h-3 w-1/2 rounded-md bg-surface-container/60 skeleton-shimmer" />
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-outline-variant/40">
+                <div className="h-4 w-24 rounded-md bg-surface-container skeleton-shimmer" />
+                <div className="h-8 w-24 rounded-full bg-surface-container skeleton-shimmer" />
+              </div>
+            </div>
           ))}
         </div>
       )

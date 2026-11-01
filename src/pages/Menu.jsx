@@ -9,6 +9,7 @@ import MobileHeader from '../components/MobileHeader.jsx'
 import DesktopNav from '../components/DesktopNav.jsx'
 import BottomNav from '../components/BottomNav.jsx'
 import CustomizeModal from '../components/CustomizeModal.jsx'
+import MenuSkeleton from '../components/MenuSkeleton.jsx'
 
 const KNOWN_CATEGORY_LABELS = {
   signature: 'Signature Tea',
@@ -107,7 +108,7 @@ export default function Menu() {
   const navigate = useNavigate()
   const { items: cartItems, subtotal: cartSubtotal } = useCart()
   const { open: openCartSheet } = useCartSheet()
-  const { items, usingSeed } = useMenuItems()
+  const { items, loading, usingSeed } = useMenuItems()
   const { groups } = useOptionGroups()
   const [searchParams] = useSearchParams()
 
@@ -326,31 +327,47 @@ export default function Menu() {
           </div>
         </div>
 
-        {usingSeed && (
-          <p className="text-[11px] lg:text-xs text-on-surface-variant mb-4">
-            Menampilkan data contoh — belum ada data dari App Kasir.
-          </p>
-        )}
-
-        {totalVisible === 0 ? (
-          <div className="text-center py-16 text-on-surface-variant bg-surface-container-lowest rounded-3xl border border-dashed border-outline-variant">
-            <span className="material-symbols-outlined text-[48px] text-outline">search_off</span>
-            <p className="mt-2 text-base font-semibold text-on-surface">Tidak ada menu yang sesuai</p>
-            <p className="text-xs text-on-surface-variant mt-1">Coba kata kunci pencarian lain atau ubah filter kategori.</p>
-            <button
-              type="button"
-              onClick={() => {
-                setSearch('')
-                setMainTab('all')
-                setDrinkSubFilter('all')
-                setFoodSubFilter('all')
-              }}
-              className="mt-4 px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors"
-            >
-              Tampilkan Semua Menu
-            </button>
+        {loading ? (
+          <div className="space-y-6 pt-2">
+            <div className="flex items-center justify-between border-b border-outline-variant/40 pb-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-surface-container skeleton-shimmer" />
+                <div className="space-y-1.5">
+                  <div className="h-5 w-28 rounded-md bg-surface-container skeleton-shimmer" />
+                  <div className="h-3 w-48 rounded-md bg-surface-container/70 skeleton-shimmer" />
+                </div>
+              </div>
+              <div className="h-5 w-16 rounded-full bg-surface-container skeleton-shimmer" />
+            </div>
+            <MenuSkeleton count={8} />
           </div>
         ) : (
+          <>
+            {!loading && usingSeed && (
+              <p className="text-[11px] lg:text-xs text-on-surface-variant mb-4">
+                Menampilkan data contoh — belum ada data dari App Kasir.
+              </p>
+            )}
+
+            {totalVisible === 0 ? (
+              <div className="text-center py-16 text-on-surface-variant bg-surface-container-lowest rounded-3xl border border-dashed border-outline-variant">
+                <span className="material-symbols-outlined text-[48px] text-outline">search_off</span>
+                <p className="mt-2 text-base font-semibold text-on-surface">Tidak ada menu yang sesuai</p>
+                <p className="text-xs text-on-surface-variant mt-1">Coba kata kunci pencarian lain atau ubah filter kategori.</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch('')
+                    setMainTab('all')
+                    setDrinkSubFilter('all')
+                    setFoodSubFilter('all')
+                  }}
+                  className="mt-4 px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors"
+                >
+                  Tampilkan Semua Menu
+                </button>
+              </div>
+            ) : (
           <div className="space-y-12">
             {/* ================= SECTION 1: DRINKS ================= */}
             {(mainTab === 'all' || mainTab === 'drinks') && (
@@ -481,7 +498,9 @@ export default function Menu() {
             )}
           </div>
         )}
-      </main>
+      </>
+    )}
+  </main>
 
       {/* Bar keranjang melayang (menggantikan sidebar keranjang desktop) */}
       {cartCount > 0 && (

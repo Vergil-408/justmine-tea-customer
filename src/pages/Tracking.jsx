@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { doc, onSnapshot, collection, query, where, orderBy } from 'firebase/firestore'
 import { db } from '../api/firebase.js'
+import TeaLoader from '../components/TeaLoader.jsx'
 
 const steps = [
   { key: 'diproses', label: 'Diproses', icon: '🍵' },
@@ -84,13 +85,11 @@ export default function Tracking() {
 
   if (!order) {
     return (
-      <div className="app-shell">
-        <div className="topbar"><h1>Tracking</h1><span /></div>
-        <div style={{ padding: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, minHeight: '50vh', justifyContent: 'center' }}>
-          <div className="payment-spinner" />
-          <p style={{ color: 'var(--color-text-muted)', margin: 0 }}>Memuat data pesanan...</p>
-        </div>
-      </div>
+      <TeaLoader
+        fullScreen
+        message="Memuat status pesananmu..."
+        submessage="Menghubungkan ke bar Justmine Tea..."
+      />
     )
   }
 

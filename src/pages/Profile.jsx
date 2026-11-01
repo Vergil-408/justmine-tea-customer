@@ -6,6 +6,7 @@ import { compressAvatar } from '../utils/avatarImage.js'
 import MobileHeader from '../components/MobileHeader.jsx'
 import DesktopNav from '../components/DesktopNav.jsx'
 import BottomNav from '../components/BottomNav.jsx'
+import TeaLoader from '../components/TeaLoader.jsx'
 
 function Icon({ name, className = '' }) {
   return (
@@ -223,9 +224,8 @@ export default function Profile() {
   /* ---------- Tampilan per state ---------- */
 
   const loadingView = (
-    <div className="flex flex-col items-center gap-3 py-24 text-on-surface-variant">
-      <Icon name="progress_activity" className="animate-spin text-4xl text-primary" />
-      <p className="text-sm">Memuat profil…</p>
+    <div className="py-20 flex justify-center">
+      <TeaLoader message="Memuat profil member..." submessage="Menyiapkan data akun & poin Justmine Tea" />
     </div>
   )
 

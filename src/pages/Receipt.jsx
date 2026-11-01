@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../api/firebase.js'
 import { formatItemOptions } from '../utils/options.js'
+import TeaLoader from '../components/TeaLoader.jsx'
 
 const rupiah = (n) => `Rp ${Number(n || 0).toLocaleString('id-ID')}`
 
@@ -31,7 +32,7 @@ export default function Receipt() {
     if (!order) return
     const url = window.location.href
     const title = `E-Receipt Justmine Tea #${order.orderCode || order.id}`
-    const text = `🍵 *E-RECEIPT JUSTMINE TEA*\n` +
+    const text = `*E-RECEIPT JUSTMINE TEA*\n` +
       `ID Pesanan: #${order.orderCode || order.id}\n` +
       `Atas Nama: ${order.customerName || order.userName || 'Pelanggan'}\n` +
       `Meja: ${tableNum ? `Meja ${tableNum}` : 'Take-Away'}\n` +
@@ -53,10 +54,11 @@ export default function Receipt() {
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-[#F4F4F4] font-sans text-neutral-800 flex flex-col items-center justify-center p-6">
-        <div className="w-8 h-8 rounded-full border-2 border-neutral-300 border-t-primary animate-spin mb-3" />
-        <p className="text-sm text-neutral-600">Memuat struk pesanan…</p>
-      </div>
+      <TeaLoader
+        fullScreen
+        message="Memuat struk pesanan…"
+        submessage="Mengambil data transaksi dari server..."
+      />
     )
   }
 
@@ -145,7 +147,7 @@ export default function Receipt() {
                 title="Salin ID Pesanan"
                 className="font-extrabold tracking-wider text-black hover:underline cursor-pointer"
               >
-                #{order.orderCode || order.id} {copied ? '✓' : ''}
+                #{order.orderCode || order.id} {copied ? <span className="material-symbols-outlined text-[13px] align-middle">check</span> : ''}
               </button>
             </div>
             <div className="flex justify-between items-center">

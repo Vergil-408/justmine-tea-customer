@@ -362,8 +362,8 @@ export default function Checkout() {
       {submitting && (
         <TeaLoader
           overlay
-          message="Memproses pesananmu..."
-          submessage="Menghubungkan ke sistem dapur Justmine Tea. Mohon jangan tutup halaman ini."
+          message="Menyiapkan Kode QRIS..."
+          submessage="Sedang membuat kode pembayaran QRIS Midtrans & mendaftarkan pesananmu ke dapur..."
         />
       )}
 

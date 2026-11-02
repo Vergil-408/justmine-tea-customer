@@ -81,9 +81,9 @@ export default function Receipt() {
   const totalAmount = order.total ?? itemsTotal
   const discount = Number(order.discount || 0)
   const finalSubtotal = Math.max(0, totalAmount - discount)
-  // Pajak Restoran (PB1) 10% dihitung tax-inclusive seperti Fore Coffee
-  const netSales = Math.round(finalSubtotal / 1.1)
-  const pb1Amount = finalSubtotal - netSales
+  // Pajak Pertambahan Nilai (PPN 11%) dihitung tax-inclusive
+  const netSales = Math.round(finalSubtotal / 1.11)
+  const ppnAmount = finalSubtotal - netSales
   const pointsEarned = order.pointsEarned ?? Math.floor(finalSubtotal / 1000)
   const isCash = (order.paymentMethod || '').toLowerCase().includes('tunai') || (order.paymentMethod || '').toLowerCase().includes('cash')
   const cashTendered = order.cashTendered ?? null
@@ -235,8 +235,8 @@ export default function Receipt() {
               <span>Rp {netSales.toLocaleString('id-ID')}</span>
             </div>
             <div className="flex justify-between text-neutral-600">
-              <span>PB1 10%</span>
-              <span>Rp {pb1Amount.toLocaleString('id-ID')}</span>
+              <span>PPN 11%</span>
+              <span>Rp {ppnAmount.toLocaleString('id-ID')}</span>
             </div>
             <div className="flex justify-between items-center font-bold text-black pt-1 border-t border-dotted border-neutral-300">
               <span>{order.paymentMethod || 'QRIS Dinamis'}</span>

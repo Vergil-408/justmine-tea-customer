@@ -165,18 +165,16 @@ export default function Tracking() {
             </button>
 
             {/* Nama Pemesan */}
-            {(order.customerName || order.userName) && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-fixed text-primary text-xs font-semibold">
-                <span className="material-symbols-outlined text-[15px]">person</span>
-                <span>{order.customerName || order.userName}</span>
-              </span>
-            )}
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-fixed text-primary text-xs font-semibold">
+              <span className="material-symbols-outlined text-[15px]">person</span>
+              <span>{(order.customerName && order.customerName !== 'Pelanggan' ? order.customerName : order.userName) || 'Guest'}</span>
+            </span>
 
             {/* Nomor Meja / Tipe Pesanan */}
             {order.tableNumber ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container text-xs font-semibold">
                 <span className="material-symbols-outlined text-[15px]">table_restaurant</span>
-                <span>Meja {order.tableNumber}</span>
+                <span>{order.tableNumber.toLowerCase().includes('meja') || order.tableNumber.toLowerCase().includes('take') ? order.tableNumber : `Meja ${order.tableNumber}`}</span>
               </span>
             ) : order.orderType ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-on-surface-variant text-xs font-semibold">

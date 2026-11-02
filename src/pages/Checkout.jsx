@@ -133,7 +133,7 @@ export default function Checkout() {
     setError('')
     setSubmitting(true)
     try {
-      const finalCustomerName = (customerName || user?.displayName || profile?.displayName || user?.email?.split('@')[0] || 'Pelanggan').trim()
+      const finalCustomerName = (customerName || user?.displayName || profile?.displayName || user?.email?.split('@')[0] || 'Guest').trim()
       const result = await requestCreateOrder({
         items,
         tableNumber: table,

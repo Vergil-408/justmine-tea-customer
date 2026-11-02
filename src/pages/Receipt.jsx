@@ -32,9 +32,17 @@ export default function Receipt() {
     if (!order) return
     const url = window.location.href
     const title = `E-Receipt Justmine Tea #${order.orderCode || order.id}`
+    const displayName = (() => {
+      const name = order.customerName || order.userName || order.buyerName
+      if (!name || name.trim().toLowerCase() === 'pelanggan' || name.trim().toLowerCase() === 'guest') {
+        return 'Guest'
+      }
+      return name.trim()
+    })()
+
     const text = `*E-RECEIPT JUSTMINE TEA*\n` +
       `ID Pesanan: #${order.orderCode || order.id}\n` +
-      `Atas Nama: ${order.customerName || order.userName || 'Pelanggan'}\n` +
+      `Atas Nama: ${displayName}\n` +
       `Meja: ${tableNum ? `Meja ${tableNum}` : 'Take-Away'}\n` +
       `Total: ${rupiah(totalAmount)}\n` +
       `Status: ${isPaid ? 'Lunas / Paid' : 'Menunggu Kasir'}\n\n` +
@@ -142,7 +150,9 @@ export default function Receipt() {
           {/* Nomor Meja / Tipe Pesanan */}
           <div className="py-2.5 text-center border-t border-dashed border-neutral-400 my-1">
             <span className="text-xl font-black tracking-widest text-black">
-              {tableNum ? `TABLE - ${String(tableNum).padStart(2, '0')}` : 'TAKE-AWAY'}
+              {tableNum && !String(tableNum).toLowerCase().includes('take')
+                ? `TABLE - ${String(tableNum).replace(/\D/g, '').padStart(2, '0') || tableNum}`
+                : 'TAKE-AWAY'}
             </span>
           </div>
 
@@ -168,14 +178,20 @@ export default function Receipt() {
               <div className="flex items-center gap-2">
                 <span>{order.cashierName || 'David / Kasir'}</span>
                 <span className="font-bold text-[10px] uppercase">
-                  {tableNum ? 'DINE-IN' : 'TAKE-AWAY'}
+                  {tableNum && !String(tableNum).toLowerCase().includes('take') ? 'DINE-IN' : 'TAKE-AWAY'}
                 </span>
               </div>
             </div>
             <div className="flex justify-between items-center">
               <span>Atas Nama  :</span>
               <span className="font-bold">
-                {order.customerName || order.userName || order.buyerName || 'Pelanggan'}
+                {(() => {
+                  const name = order.customerName || order.userName || order.buyerName
+                  if (!name || name.trim().toLowerCase() === 'pelanggan' || name.trim().toLowerCase() === 'guest') {
+                    return 'Guest'
+                  }
+                  return name.trim()
+                })()}
               </span>
             </div>
           </div>

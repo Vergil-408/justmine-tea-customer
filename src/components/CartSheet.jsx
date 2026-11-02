@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
 import { useCartSheet } from '../context/CartSheetContext.jsx'
-import { formatItemOptions } from '../utils/options.js'
+import { formatItemOptions, getItemOptionLines } from '../utils/options.js'
 
 export default function CartSheet() {
     const { isOpen, close } = useCartSheet()
@@ -44,11 +44,11 @@ export default function CartSheet() {
                     ) : (
                         <div className="flex flex-col gap-3">
                             {items.map((item) => {
-                                const optionsText = formatItemOptions(item)
+                                const optionLines = getItemOptionLines(item)
                                 return (
                                     <div key={item.cartId} className="bg-surface-container-lowest rounded-2xl border border-outline-variant/50 p-3.5 shadow-sm">
                                         <div className="flex justify-between gap-2">
-                                            <div className="min-w-0">
+                                            <div className="min-w-0 flex-1">
                                                 <div className="flex items-center gap-1.5">
                                                     <h3 className="text-sm font-semibold truncate">{item.name}</h3>
                                                     {item.isBundle && (
@@ -57,8 +57,14 @@ export default function CartSheet() {
                                                         </span>
                                                     )}
                                                 </div>
-                                                {optionsText && (
-                                                    <p className="text-xs text-on-surface-variant mt-0.5">{optionsText}</p>
+                                                {optionLines.length > 0 && (
+                                                    <div className="mt-1 space-y-0.5 pl-2 border-l-2 border-primary/30">
+                                                        {optionLines.map((line, lIdx) => (
+                                                            <p key={lIdx} className="text-[11px] text-on-surface-variant leading-tight">
+                                                                {line}
+                                                            </p>
+                                                        ))}
+                                                    </div>
                                                 )}
                                             </div>
                                             <button

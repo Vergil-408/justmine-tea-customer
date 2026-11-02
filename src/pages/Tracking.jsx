@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { doc, onSnapshot, collection, query, where } from 'firebase/firestore'
 import { db } from '../api/firebase.js'
-import { formatItemOptions } from '../utils/options.js'
+import { formatItemOptions, getItemOptionLines } from '../utils/options.js'
 import TeaLoader from '../components/TeaLoader.jsx'
 
 const STEPS = [
@@ -343,34 +343,27 @@ export default function Tracking() {
           <div className="space-y-3 divide-y divide-outline-variant/30">
             {(order.items || []).map((item, idx) => {
               const lineTotal = (item.price || 0) * (item.qty || 1)
-              const options = formatItemOptions(item)
+              const optionLines = getItemOptionLines(item)
 
               return (
                 <div key={idx} className={`flex justify-between items-start gap-3 ${idx > 0 ? 'pt-3' : ''}`}>
-                  <div className="flex items-start gap-2.5 min-w-0">
+                  <div className="flex items-start gap-2.5 min-w-0 flex-1">
                     <span className="w-6 h-6 rounded-lg bg-surface-container text-xs font-bold text-on-surface flex items-center justify-center shrink-0 mt-0.5">
                       {item.qty}×
                     </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-on-surface leading-tight truncate">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-on-surface leading-tight">
                         {item.name}
                       </p>
-                      {options ? (
-                        <p className="text-xs text-on-surface-variant mt-0.5 leading-snug">
-                          {options}
-                        </p>
-                      ) : item.detail ? (
-                        <p className="text-xs text-on-surface-variant mt-0.5 leading-snug">
-                          {[
-                            item.detail.base,
-                            item.detail.sweetness,
-                            item.detail.ice,
-                            item.detail.milk && `Susu ${item.detail.milk}`,
-                          ]
-                            .filter(Boolean)
-                            .join(' • ')}
-                        </p>
-                      ) : null}
+                      {optionLines.length > 0 && (
+                        <div className="mt-1 space-y-0.5 pl-2 border-l-2 border-primary/30">
+                          {optionLines.map((line, lIdx) => (
+                            <p key={lIdx} className="text-xs text-on-surface-variant leading-tight">
+                              {line}
+                            </p>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <span className="text-sm font-bold text-on-surface shrink-0">

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../api/firebase.js'
-import { formatItemOptions } from '../utils/options.js'
+import { formatItemOptions, getItemOptionLines } from '../utils/options.js'
 import TeaLoader from '../components/TeaLoader.jsx'
 
 const rupiah = (n) => `Rp ${Number(n || 0).toLocaleString('id-ID')}`
@@ -77,8 +77,14 @@ export default function Receipt() {
   const isPaid = order.paymentStatus === 'dibayar' || order.status === 'siap' || order.status === 'selesai'
   const items = Array.isArray(order.items) ? order.items : []
   const itemsTotal = items.reduce((sum, it) => sum + (it.price || 0) * (it.qty || 1), 0)
+  const totalQty = items.reduce((sum, it) => sum + (it.qty || 1), 0)
   const totalAmount = order.total ?? itemsTotal
-  const pointsEarned = order.pointsEarned ?? Math.floor(totalAmount / 1000)
+  const discount = Number(order.discount || 0)
+  const finalSubtotal = Math.max(0, totalAmount - discount)
+  // Pajak Restoran (PB1) 10% dihitung tax-inclusive seperti Fore Coffee
+  const netSales = Math.round(finalSubtotal / 1.1)
+  const pb1Amount = finalSubtotal - netSales
+  const pointsEarned = order.pointsEarned ?? Math.floor(finalSubtotal / 1000)
   const isCash = (order.paymentMethod || '').toLowerCase().includes('tunai') || (order.paymentMethod || '').toLowerCase().includes('cash')
   const cashTendered = order.cashTendered ?? null
   const cashChange = order.change ?? null
@@ -174,74 +180,82 @@ export default function Receipt() {
             </div>
           </div>
 
-          {/* Daftar Item Pesanan & Kustomisasi */}
-          <div className="border-t border-dashed border-neutral-400 py-2.5 space-y-2.5 text-[11px]">
+          {/* Header Order (Fore Coffee Style) */}
+          <div className="border-t border-dashed border-neutral-400 pt-2.5 pb-1 flex justify-between items-center text-xs font-bold text-black">
+            <span>Order</span>
+            <span>Total Order: {totalQty}</span>
+          </div>
+
+          {/* Daftar Item Pesanan & Kustomisasi Vertikal */}
+          <div className="border-b border-dashed border-neutral-400 pb-2.5 space-y-2 text-[11px]">
             {items.map((item, idx) => {
               const lineTotal = (item.price || 0) * (item.qty || 1)
-              const options = formatItemOptions(item)
+              const optionLines = getItemOptionLines(item)
               return (
                 <div key={idx} className="space-y-0.5">
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex items-start gap-2 min-w-0">
-                      <span className="font-bold shrink-0">{item.qty}</span>
-                      <span className="font-bold text-black uppercase truncate">{item.name}</span>
+                      <span className="font-bold shrink-0">{item.qty} x</span>
+                      <span className="font-bold text-black uppercase">{item.name}</span>
                     </div>
                     <span className="font-bold shrink-0 text-black">
-                      {lineTotal.toLocaleString('id-ID')}
+                      Rp {lineTotal.toLocaleString('id-ID')}
                     </span>
                   </div>
-                  {options && (
-                    <p className="text-[10px] text-neutral-600 pl-4 leading-tight">
-                      - {options} {item.qty > 1 ? `(${item.qty}x @${Math.round(item.price / 1000)}k)` : ''}
-                    </p>
+                  {optionLines.length > 0 && (
+                    <div className="pl-6 space-y-0.5 text-[10px] text-neutral-600">
+                      {optionLines.map((line, lIdx) => (
+                        <p key={lIdx} className="leading-tight">
+                          {line}
+                        </p>
+                      ))}
+                    </div>
                   )}
                 </div>
               )
             })}
           </div>
 
-          {/* Subtotal, Pajak/PB1, & TOTAL */}
-          <div className="border-t border-dashed border-neutral-400 py-2 space-y-1 text-[11px]">
+          {/* Rincian Finansial, Pajak PB1 & TOTAL (Fore Coffee Style) */}
+          <div className="py-2.5 space-y-1 text-[11px] border-b border-dashed border-neutral-400">
             <div className="flex justify-between">
-              <span>Subtotal :</span>
-              <span>{itemsTotal.toLocaleString('id-ID')}</span>
+              <span>Total Inc Tax</span>
+              <span>Rp {totalAmount.toLocaleString('id-ID')}</span>
             </div>
             <div className="flex justify-between text-neutral-600">
-              <span>PB1 (Pajak Resto 0%) :</span>
-              <span>0</span>
+              <span>Voucher Discount</span>
+              <span>Rp {discount.toLocaleString('id-ID')}</span>
+            </div>
+            <div className="flex justify-between font-bold text-black pt-0.5">
+              <span>SUBTOTAL</span>
+              <span>Rp {finalSubtotal.toLocaleString('id-ID')}</span>
+            </div>
+            <div className="flex justify-between text-neutral-600 pt-1 border-t border-dotted border-neutral-300">
+              <span>Net Sales</span>
+              <span>Rp {netSales.toLocaleString('id-ID')}</span>
             </div>
             <div className="flex justify-between text-neutral-600">
-              <span>Service Charge (0%) :</span>
-              <span>0</span>
+              <span>PB1 10%</span>
+              <span>Rp {pb1Amount.toLocaleString('id-ID')}</span>
             </div>
-            <div className="flex justify-between items-baseline pt-2 mt-1 border-t border-dashed border-neutral-400 text-sm font-black">
-              <span className="tracking-wider text-black">TOTAL &nbsp; :</span>
-              <span className="text-base font-black text-black">
-                Rp {totalAmount.toLocaleString('id-ID')}
-              </span>
-            </div>
-          </div>
-
-          {/* Rincian Pembayaran */}
-          <div className="border-t border-dashed border-neutral-400 py-2 space-y-1 text-[11px]">
-            <div className="flex justify-between items-center">
-              <span>Metode Bayar:</span>
-              <span className="font-bold">{order.paymentMethod || 'QRIS Dinamis (BCA/Gopay)'}</span>
+            <div className="flex justify-between items-center font-bold text-black pt-1 border-t border-dotted border-neutral-300">
+              <span>{order.paymentMethod || 'QRIS Dinamis'}</span>
+              <span>Rp {finalSubtotal.toLocaleString('id-ID')}</span>
             </div>
             {isCash && cashTendered != null && (
-              <div className="flex justify-between items-center">
-                <span>Uang Diterima:</span>
-                <span className="font-bold">Rp {Number(cashTendered).toLocaleString('id-ID')}</span>
+              <div className="flex justify-between text-neutral-700">
+                <span>Tunai Diterima</span>
+                <span>Rp {Number(cashTendered).toLocaleString('id-ID')}</span>
               </div>
             )}
             {isCash && cashChange != null && (
-              <div className="flex justify-between items-center font-black">
-                <span>KEMBALIAN  :</span>
+              <div className="flex justify-between font-bold text-black">
+                <span>KEMBALIAN</span>
                 <span>Rp {Number(cashChange).toLocaleString('id-ID')}</span>
               </div>
             )}
-            <div className="flex justify-between items-center">
-              <span>Status      :</span>
+            <div className="flex justify-between items-center pt-1">
+              <span>Status</span>
               <span
                 className={`px-1.5 py-0.5 text-[10px] font-extrabold tracking-wider border ${
                   isPaid
@@ -252,16 +266,14 @@ export default function Receipt() {
                 {isPaid ? 'LUNAS / PAID' : 'MENUNGGU KASIR'}
               </span>
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center text-[10px] text-neutral-500 font-mono">
               <span>Ref Transaksi:</span>
-              <span className="text-[10px] font-mono text-neutral-700">
-                TRX-JM-{order.orderCode || order.id}
-              </span>
+              <span>TRX-JM-{order.orderCode || order.id}</span>
             </div>
           </div>
 
           {/* Promo & Poin Loyalty (Tanpa QR Code) */}
-          <div className="border-t border-dashed border-neutral-400 py-2.5 text-center space-y-1">
+          <div className="py-2.5 text-center space-y-1 border-b border-dashed border-neutral-400">
             <p className="text-[11px] font-bold text-black">
               Dapatkan {pointsEarned} Poin Melati untuk transaksi ini!
             </p>
@@ -273,20 +285,17 @@ export default function Receipt() {
             <p className="text-[9.5px] text-neutral-600 leading-tight italic">
               Tunjukkan struk digital ini ke Barista untuk klaim poin member.
             </p>
-            <p className="text-[9px] font-black tracking-[0.14em] text-neutral-800 uppercase mt-1">
-              MADE FROM AUTHENTIC BOTANICAL HARVEST!
-            </p>
           </div>
 
-          {/* Footer Ucapan Terima Kasih */}
-          <div className="border-t border-dashed border-neutral-400 pt-3 pb-1 text-center space-y-1">
-            <p className="text-[11px] italic font-serif text-neutral-800">
-              &lsquo;Nikmati jeda teh terbaik Anda&rsquo;
+          {/* Footer Ucapan Terima Kasih (Fore Coffee Style) */}
+          <div className="pt-3 pb-1 text-center space-y-1">
+            <h3 className="font-bold text-sm tracking-wide text-black uppercase">
+              Terima kasih
+            </h3>
+            <p className="text-[10px] italic font-serif text-neutral-800">
+              &lsquo;Nikmati jeda teh terbaik Anda bersama Justmine Tea&rsquo;
             </p>
-            <p className="text-[10px] text-neutral-700">
-              Terima kasih atas kunjungan Anda di Justmine Tea.
-            </p>
-            <p className="text-[8px] tracking-widest text-neutral-400 uppercase pt-1">
+            <p className="text-[8px] tracking-widest text-neutral-400 uppercase pt-2">
               POS VERSION 4.2.1 • CLOUD SYNCED
             </p>
           </div>

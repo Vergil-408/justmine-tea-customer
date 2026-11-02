@@ -7,7 +7,7 @@ import { useCart } from '../context/CartContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useTable } from '../context/TableContext.jsx'
 import { addGuestOrder } from '../utils/guestOrders.js'
-import { formatItemOptions } from '../utils/options.js'
+import { formatItemOptions, getItemOptionLines } from '../utils/options.js'
 import TeaLoader from '../components/TeaLoader.jsx'
 
 const SANDBOX_GUIDE = 'https://docs.midtrans.com/docs/testing-payment-on-sandbox'
@@ -349,14 +349,22 @@ export default function Checkout() {
           <h2 className="text-sm font-bold mb-3">Ringkasan</h2>
           <div className="space-y-3">
             {items.map((item) => {
-              const opts = formatItemOptions(item)
+              const optionLines = getItemOptionLines(item)
               return (
-                <div key={item.cartId} className="flex justify-between gap-3 text-sm">
-                  <div className="min-w-0">
+                <div key={item.cartId} className="flex justify-between items-start gap-3 text-sm">
+                  <div className="min-w-0 flex-1">
                     <p className="font-semibold">{item.qty}× {item.name}</p>
-                    {opts && <p className="text-xs text-on-surface-variant mt-0.5">{opts}</p>}
+                    {optionLines.length > 0 && (
+                      <div className="mt-1 space-y-0.5 pl-2 border-l-2 border-primary/30">
+                        {optionLines.map((line, lIdx) => (
+                          <p key={lIdx} className="text-xs text-on-surface-variant leading-tight">
+                            {line}
+                          </p>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <span className="shrink-0">{rupiah(item.price * item.qty)}</span>
+                  <span className="shrink-0 font-bold">{rupiah(item.price * item.qty)}</span>
                 </div>
               )
             })}

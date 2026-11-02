@@ -359,7 +359,7 @@ export default function Tracking() {
                         <div className="mt-1 space-y-0.5 pl-2 border-l-2 border-primary/30">
                           {optionLines.map((line, lIdx) => (
                             <p key={lIdx} className="text-xs text-on-surface-variant leading-tight">
-                              {line}
+                              - {line}
                             </p>
                           ))}
                         </div>

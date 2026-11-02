@@ -3,15 +3,15 @@ import { formatRupiah } from '../utils/formatPrice.js'
 
 // Opsi default kemanisan dan es
 const SWEETNESS_CHOICES = [
-  { id: 'normal', label: 'Normal (100%)' },
-  { id: 'less', label: 'Sedikit (50%)' },
-  { id: 'no', label: 'Tanpa Gula (0%)' },
+  { id: 'normal', label: 'Normal Sugar' },
+  { id: 'less', label: 'Less Sugar' },
+  { id: 'no', label: 'No Sugar' },
 ]
 
 const ICE_CHOICES = [
   { id: 'normal', label: 'Normal Ice' },
-  { id: 'less', label: 'Sedikit Es' },
-  { id: 'no', label: 'Tanpa Es' },
+  { id: 'less', label: 'Less Ice' },
+  { id: 'no', label: 'No Ice' },
 ]
 
 const TOPPING_CHOICES = [
@@ -39,7 +39,7 @@ export default function BundleModal({ bundle, menuItems = [], onClose, onAddToCa
         menuId: defaultDrink ? defaultDrink.id : '',
         drinkName: defaultDrink ? defaultDrink.name : '',
         sugar: 'normal',
-        sugarLabel: 'Normal (100%)',
+        sugarLabel: 'Normal Sugar',
         ice: 'normal',
         iceLabel: 'Normal Ice',
         topping: slot.freeTopping ? 'top-boba' : null, // jika slot freeTopping (Tea Upgrade), kasih default topping

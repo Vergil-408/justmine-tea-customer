@@ -90,9 +90,9 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
         id: 'gula',
         label: 'Tingkat Kemanisan',
         choices: [
-          { id: 'normal', label: 'Normal (100%)', priceDelta: 0 },
-          { id: 'less', label: 'Sedikit (50%)', priceDelta: 0 },
-          { id: 'no', label: 'Tanpa Gula (0%)', priceDelta: 0 },
+          { id: 'normal', label: 'Normal Sugar', priceDelta: 0 },
+          { id: 'less', label: 'Less Sugar', priceDelta: 0 },
+          { id: 'no', label: 'No Sugar', priceDelta: 0 },
         ],
       }
     : null
@@ -103,8 +103,8 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
         label: 'Tingkat Es Batu',
         choices: [
           { id: 'normal', label: 'Normal Ice', priceDelta: 0 },
-          { id: 'less', label: 'Sedikit Es', priceDelta: 0 },
-          { id: 'no', label: 'Tanpa Es', priceDelta: 0 },
+          { id: 'less', label: 'Less Ice', priceDelta: 0 },
+          { id: 'no', label: 'No Ice', priceDelta: 0 },
         ],
       }
     : null
@@ -174,7 +174,7 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
           groupId: 'gula',
           groupLabel: 'Tingkat Kemanisan',
           choiceId: sugarChoice.id,
-          choiceLabel: sugarChoice.label || 'Normal (100%)',
+          choiceLabel: sugarChoice.label || 'Normal Sugar',
           priceDelta: 0,
         })
       }

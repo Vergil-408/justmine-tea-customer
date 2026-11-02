@@ -203,10 +203,10 @@ export default function Receipt() {
                     </span>
                   </div>
                   {optionLines.length > 0 && (
-                    <div className="pl-6 space-y-0.5 text-[10px] text-neutral-600">
+                    <div className="pl-6 space-y-0.5 text-[10.5px] text-neutral-700 font-mono">
                       {optionLines.map((line, lIdx) => (
                         <p key={lIdx} className="leading-tight">
-                          {line}
+                          - {line}
                         </p>
                       ))}
                     </div>

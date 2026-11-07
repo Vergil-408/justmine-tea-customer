@@ -20,7 +20,7 @@ function getInitials(name) {
   return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : name.slice(0, 2).toUpperCase()
 }
 
-export default function DesktopNav() {
+export default function DesktopNav({ transparent = false }) {
   const { items } = useCart()
   const { open } = useCartSheet()
   const { points, isLoggedIn } = useUserProfile()
@@ -39,7 +39,11 @@ export default function DesktopNav() {
   }, [cartCount])
 
   return (
-    <header className="hidden lg:block sticky top-0 z-40 bg-surface-container-lowest/95 backdrop-blur-xl border-b border-outline-variant/40">
+    <header className={`hidden lg:block sticky top-0 z-40 transition-colors duration-300 ${
+      transparent
+        ? 'bg-transparent border-b border-transparent'
+        : 'bg-surface-container-lowest/95 backdrop-blur-xl border-b border-outline-variant/40'
+    }`}>
       <div className="max-w-[1400px] mx-auto px-8 h-[72px] flex items-center gap-8">
         <div className="flex items-center gap-3 shrink-0">
           <img

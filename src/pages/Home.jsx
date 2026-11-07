@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import chaImg from '../assets/cha.png'
 
 /* ============================================================
    FOTO — TARUH FILE DI  public/images/
@@ -7,7 +8,7 @@ import { Link } from 'react-router-dom'
    Ganti path di bawah kalau nama filenya beda.
    ============================================================ */
 const IMAGES = {
-  heroGirl: '/images/hero-girl.png',        // <-- FOTO CEWEK + 3 CUP (hero kanan)
+  heroGirl: chaImg,        // <-- FOTO CEWEK + 3 CUP (assets/cha.png)
   story: '/images/story-tea.jpg',
   promoCup: '/images/promo-cup.png',
   locations: '/images/store-front.jpg',
@@ -215,43 +216,109 @@ function Hero() {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
-  const highlights = [['eco', 'Premium Tea Leaves'], ['local_cafe', 'Refreshing Taste'], ['favorite', 'Better Together']]
+
+  const highlights = [
+    ['eco', 'Premium Tea Leaves'],
+    ['local_cafe', 'Refreshing Taste'],
+    ['favorite', 'Better Together'],
+  ]
+
   return (
-    <section id="top" className="relative overflow-hidden" style={{ background: `linear-gradient(120deg, ${C.beige}, ${C.cream} 45%, ${C.ivory})` }}>
-      <div ref={bg} className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        <Leaf className="absolute top-24 left-[44%] w-16 rotate-[25deg] opacity-70" />
-        <Jasmine className="absolute top-40 left-[38%] w-12 opacity-80 hidden lg:block" />
+    <section
+      id="top"
+      className="relative overflow-hidden w-full bg-[#F7F3E9] lg:h-[850px] lg:min-h-[850px] flex flex-col lg:flex-row lg:items-center"
+    >
+      {/* 1. Desktop Background Foto full-width, object-right, absolute inset-0 */}
+      <div className="hidden lg:block absolute inset-0 w-full h-full pointer-events-none z-0">
+        <Photo
+          src={IMAGES.heroGirl}
+          alt="Foto cewek + 3 cup Justmine Tea"
+          hint="src/assets/cha.png"
+          className="w-full h-full"
+          imgClass="w-full h-full object-cover object-right"
+        />
       </div>
-      <div className="relative max-w-7xl mx-auto px-5 lg:px-8 grid lg:grid-cols-12 items-center lg:min-h-[800px] gap-6 pt-10 lg:pt-0">
-        <div className="lg:col-span-5 relative z-10 space-y-6 pb-4 lg:pb-0">
+
+      {/* 2. Desktop Overlay Gradient (kiri ke kanan) */}
+      <div
+        className="hidden lg:block absolute inset-0 pointer-events-none z-[1]"
+        style={{
+          background:
+            'linear-gradient(90deg, #F7F3E9 0%, #F7F3E9 30%, rgba(247,243,233,0.85) 42%, rgba(247,243,233,0) 65%)',
+        }}
+        aria-hidden="true"
+      />
+
+      {/* 3. Fade di tepi bawah hero (menghubungkan mulus ke #FFFDF7 Story) */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-[120px] pointer-events-none z-[2]"
+        style={{
+          background: 'linear-gradient(180deg, rgba(255,253,247,0) 0%, #FFFDF7 100%)',
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Parallax / Floating Leaves dekorasi */}
+      <div ref={bg} className="hidden lg:block absolute inset-0 pointer-events-none z-[3]" aria-hidden="true">
+        <Leaf className="absolute top-24 left-[44%] w-16 rotate-[25deg] opacity-70" />
+        <Jasmine className="absolute top-40 left-[38%] w-12 opacity-80" />
+      </div>
+
+      {/* 5. Mobile (<1024px): Foto di atas (tinggi 420px, object-position kanan) + Gradient vertikal */}
+      <div className="block lg:hidden relative w-full h-[420px] shrink-0 overflow-hidden bg-[#F7F3E9] z-0">
+        <Photo
+          src={IMAGES.heroGirl}
+          alt="Foto cewek + 3 cup Justmine Tea"
+          hint="src/assets/cha.png"
+          className="w-full h-full"
+          imgClass="w-full h-full object-cover object-right"
+        />
+        {/* Gradient vertikal di atas foto mobile (transparan di atas, #F7F3E9 di bawah) */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              'linear-gradient(180deg, rgba(247,243,233,0) 0%, rgba(247,243,233,0.4) 50%, #F7F3E9 100%)',
+          }}
+          aria-hidden="true"
+        />
+        <Jasmine className="absolute bottom-4 right-4 w-12" />
+      </div>
+
+      {/* 4. Teks di kolom kiri, max-width ~560px, vertikal center di desktop */}
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-5 lg:px-8 flex items-center">
+        <div className="w-full max-w-[560px] space-y-6 pt-4 pb-12 lg:py-0 text-left">
           <p className="flex items-center gap-3 text-sm font-semibold tracking-widest" style={{ color: C.wood }}>
             GOOD TEA, GOOD MOOD <span className="h-px w-16" style={{ background: C.wood }} />
           </p>
-          <h1 className="text-5xl sm:text-6xl xl:text-7xl leading-[1.05] font-semibold" style={{ ...serif, color: C.forest }}>
+
+          <h1 className="text-4xl sm:text-6xl xl:text-7xl leading-[1.05] font-semibold" style={{ ...serif, color: C.forest }}>
             Justmine Tea <em className="font-normal">in Every Sip</em>
           </h1>
-          <p className="text-lg max-w-sm leading-relaxed" style={{ color: C.sage }}>Pure tea, balanced taste, made for your everyday.</p>
-          <div className="flex flex-wrap gap-3">
-            <Btn to="/menu"><span className="material-symbols-outlined text-[18px]">shopping_bag</span>Order Now</Btn>
-            <Btn variant="outline" onClick={() => scrollToId('menu')}>Explore Menu</Btn>
+
+          <p className="text-base sm:text-lg max-w-sm sm:max-w-md leading-relaxed" style={{ color: C.sage }}>
+            Pure tea, balanced taste, made for your everyday.
+          </p>
+
+          <div className="flex flex-wrap gap-3 pt-1">
+            <Btn to="/menu">
+              <span className="material-symbols-outlined text-[18px]">shopping_bag</span>Order Now
+            </Btn>
+            <Btn variant="outline" onClick={() => scrollToId('menu')}>
+              Explore Menu
+            </Btn>
           </div>
-          <ul className="flex flex-wrap gap-x-6 gap-y-3 pt-4">
+
+          <ul className="flex flex-wrap gap-x-6 gap-y-3 pt-3">
             {highlights.map(([icon, label]) => (
               <li key={label} className="flex items-center gap-2 text-sm font-medium" style={{ color: C.forest }}>
-                <span className="w-9 h-9 rounded-full flex items-center justify-center border" style={{ borderColor: C.sage }}>
+                <span className="w-9 h-9 rounded-full flex items-center justify-center border bg-[#FFFDF7]/60" style={{ borderColor: C.sage }}>
                   <span className="material-symbols-outlined text-[18px]">{icon}</span>
-                </span>{label}
+                </span>
+                {label}
               </li>
             ))}
           </ul>
-        </div>
-
-        {/* SLOT FOTO CEWEK */}
-        <div className="lg:col-span-7 relative h-[420px] sm:h-[560px] lg:h-[800px] -mx-5 lg:mx-0">
-          <div className="absolute inset-0 lg:-right-8 lg:left-0 lg:rounded-bl-[200px] overflow-hidden" style={{ background: C.beige }}>
-            <Photo src={IMAGES.heroGirl} alt="Foto cewek + 3 cup Justmine Tea" hint="public/images/hero-girl.png" imgClass="object-[center_30%]" />
-          </div>
-          <Jasmine className="absolute bottom-6 right-4 w-16 hidden sm:block" />
         </div>
       </div>
     </section>

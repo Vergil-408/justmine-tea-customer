@@ -14,6 +14,8 @@ export default function TableScannerModal() {
   const [successTable, setSuccessTable] = useState('')
   const [cameraPermissionError, setCameraPermissionError] = useState(false)
   const [isInitializingCamera, setIsInitializingCamera] = useState(false)
+  const [availableCameras, setAvailableCameras] = useState([])
+  const [selectedCameraIndex, setSelectedCameraIndex] = useState(0)
 
   const scannerRef = useRef(null)
   const isStoppingRef = useRef(false)
@@ -28,7 +30,7 @@ export default function TableScannerModal() {
     }
   }, [isScannerOpen, table])
 
-  // Lifecycle scanner kamera
+  // Lifecycle scanner kamera (Mendukung Kamera HP & Webcam Laptop/PC)
   useEffect(() => {
     if (!isScannerOpen || activeTab !== 'camera' || successTable) {
       stopScanner()
@@ -43,7 +45,6 @@ export default function TableScannerModal() {
 
     const qrElementId = 'justmine-table-qr-reader'
 
-    // Beri sedikit waktu agar elemen DOM ter-render
     const timer = setTimeout(async () => {
       if (!isMounted) return
       const container = document.getElementById(qrElementId)
@@ -53,30 +54,76 @@ export default function TableScannerModal() {
         const html5Qr = new Html5Qrcode(qrElementId)
         scannerRef.current = html5Qr
 
-        await html5Qr.start(
-          { facingMode: 'environment' },
-          {
-            fps: 10,
-            qrbox: { width: 230, height: 230 },
-            aspectRatio: 1.0,
-          },
-          (decodedText) => {
-            handleScanSuccess(decodedText)
-          },
-          () => {
-            // frame callback error biasa saat mencari QR (abaikan)
+        // 1. Coba deteksi daftar kamera yang tersedia di perangkat (HP atau Laptop)
+        let devices = []
+        try {
+          devices = await Html5Qrcode.getCameras()
+          if (isMounted && devices && devices.length > 0) {
+            setAvailableCameras(devices)
           }
-        )
+        } catch (e) {
+          console.warn('Tidak dapat membaca daftar kamera via getCameras:', e)
+        }
+
+        // 2. Tentukan kamera yang akan digunakan
+        let cameraConfig = null
+
+        if (devices && devices.length > 0) {
+          // Jika user memilih kamera tertentu via tombol switch
+          if (selectedCameraIndex < devices.length) {
+            cameraConfig = devices[selectedCameraIndex].id
+          } else {
+            // Prioritaskan kamera belakang jika di smartphone
+            const backCam = devices.find((d) =>
+              /back|rear|environment|belakang/i.test(d.label || '')
+            )
+            cameraConfig = backCam ? backCam.id : devices[0].id
+          }
+        } else {
+          // Fallback ke facingMode environment
+          cameraConfig = { facingMode: 'environment' }
+        }
+
+        const scanConfig = {
+          fps: 10,
+          qrbox: { width: 230, height: 230 },
+          aspectRatio: 1.0,
+        }
+
+        // 3. Jalankan pemindaian kamera
+        try {
+          await html5Qr.start(
+            cameraConfig,
+            scanConfig,
+            (decodedText) => {
+              handleScanSuccess(decodedText)
+            },
+            () => {}
+          )
+        } catch (initialErr) {
+          console.warn('Gagal dengan kamera primer, mencoba fallback webcam laptop/user:', initialErr)
+          // Fallback penting untuk Laptop / Webcam yang tidak memiliki facingMode environment:
+          await html5Qr.start(
+            { facingMode: 'user' },
+            scanConfig,
+            (decodedText) => {
+              handleScanSuccess(decodedText)
+            },
+            () => {}
+          )
+        }
 
         if (isMounted) {
           setIsInitializingCamera(false)
         }
       } catch (err) {
-        console.warn('Gagal mengakses kamera:', err)
+        console.warn('Gagal total mengakses kamera:', err)
         if (isMounted) {
           setIsInitializingCamera(false)
           setCameraPermissionError(true)
-          setErrorMsg('Kamera tidak dapat diakses atau izin ditolak. Silakan gunakan input manual.')
+          setErrorMsg(
+            'Kamera/webcam tidak dapat diakses atau izin belum diberikan di browser. Silakan izinkan akses kamera atau gunakan input manual.'
+          )
         }
       }
     }, 150)
@@ -86,7 +133,7 @@ export default function TableScannerModal() {
       clearTimeout(timer)
       stopScanner()
     }
-  }, [isScannerOpen, activeTab, successTable])
+  }, [isScannerOpen, activeTab, successTable, selectedCameraIndex])
 
   function stopScanner() {
     if (isStoppingRef.current) return
@@ -109,6 +156,12 @@ export default function TableScannerModal() {
         console.warn('Error saat menghentikan scanner:', e)
       }
     }
+  }
+
+  function handleSwitchCamera() {
+    if (availableCameras.length <= 1) return
+    stopScanner()
+    setSelectedCameraIndex((prev) => (prev + 1) % availableCameras.length)
   }
 
   function handleScanSuccess(rawResult) {
@@ -204,7 +257,7 @@ export default function TableScannerModal() {
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">qr_code_scanner</span>
-            Scan Kamera
+            Kamera / Webcam
           </button>
           <button
             type="button"
@@ -236,12 +289,25 @@ export default function TableScannerModal() {
           </div>
         ) : (
           <div className="p-5">
-            {/* TAB 1: SCAN KAMERA */}
+            {/* TAB 1: SCAN KAMERA / WEBCAM */}
             {activeTab === 'camera' && (
               <div className="space-y-3">
                 <div className="relative rounded-2xl overflow-hidden bg-black aspect-square flex items-center justify-center border border-stone-300">
                   {/* Container video HTML5 QR Code */}
                   <div id="justmine-table-qr-reader" className="w-full h-full" />
+
+                  {/* Tombol Ganti Kamera jika ada lebih dari 1 kamera/webcam */}
+                  {availableCameras.length > 1 && !isInitializingCamera && !cameraPermissionError && (
+                    <button
+                      type="button"
+                      onClick={handleSwitchCamera}
+                      className="absolute top-3 right-3 px-2.5 py-1.5 rounded-full bg-black/60 text-white text-[11px] font-semibold flex items-center gap-1 backdrop-blur-xs hover:bg-black/80 active:scale-95 transition-all shadow-md z-10"
+                      title="Ganti kamera / webcam"
+                    >
+                      <span className="material-symbols-outlined text-[15px]">cameraswitch</span>
+                      <span>Ganti</span>
+                    </button>
+                  )}
 
                   {/* Loading saat buka kamera */}
                   {isInitializingCamera && (
@@ -249,7 +315,7 @@ export default function TableScannerModal() {
                       <span className="material-symbols-outlined text-[28px] animate-spin">
                         progress_activity
                       </span>
-                      <span>Membuka kamera...</span>
+                      <span>Membuka kamera / webcam...</span>
                     </div>
                   )}
 
@@ -267,7 +333,7 @@ export default function TableScannerModal() {
                         videocam_off
                       </span>
                       <p className="text-xs leading-relaxed text-stone-300">
-                        Kamera tidak dapat diakses. Pastikan izin kamera telah diberikan di browser.
+                        Kamera atau webcam tidak dapat diakses. Pastikan izin kamera sudah diberikan di browser.
                       </p>
                       <button
                         type="button"
@@ -280,8 +346,8 @@ export default function TableScannerModal() {
                   )}
                 </div>
 
-                <p className="text-center text-xs text-stone-500">
-                  Arahkan kamera ke stiker QR Code yang terpasang di atas mejamu.
+                <p className="text-center text-xs text-stone-500 leading-relaxed">
+                  Arahkan QR Code meja ke webcam laptop atau kamera HP-mu.
                 </p>
               </div>
             )}

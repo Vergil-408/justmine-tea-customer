@@ -1,55 +1,144 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import chaImg from '../assets/cha.png'
-import DesktopNav from '../components/DesktopNav.jsx'
-import MobileHeader from '../components/MobileHeader.jsx'
+import iconImg from '../assets/icon.png'
+import { useCart } from '../context/CartContext.jsx'
+import { useCartSheet } from '../context/CartSheetContext.jsx'
 
 /* ============================================================
-   FOTO — TARUH FILE DI  public/images/
-   Kalau file belum ada, otomatis tampil placeholder (tidak ada broken image).
-   Ganti path di bawah kalau nama filenya beda.
+   PALET WARNA & IDENTITAS BRAND JUSTMINE TEA
+   - Primary: Forest Green #124734
+   - Secondary: Sage Green #A9B99A
+   - Background: Warm Cream #F7F3E9
+   - Accent: Soft Beige #E8DCC5
+   - Dark Forest: #092D20
+   - Pure Ivory: #FFFDF7
+   - Warm Amber: #D9A55B
    ============================================================ */
-const IMAGES = {
-  heroGirl: chaImg,        // <-- FOTO CEWEK + 3 CUP (assets/cha.png)
-  story: '/images/story-tea.jpg',
-  promoCup: '/images/promo-cup.png',
-  locations: '/images/store-front.jpg',
-  gallery: [
-    '/images/gallery-1.jpg', // customer pegang cup
-    '/images/gallery-2.jpg', // interior toko
-    '/images/gallery-3.jpg', // bunga melati
-    '/images/gallery-4.jpg', // cewek minum teh
-    '/images/gallery-5.jpg', // produk
-    '/images/gallery-6.jpg', // proses seduh
-  ],
+const C = {
+  forest: '#124734',
+  darkForest: '#092D20',
+  sage: '#A9B99A',
+  sageDark: '#5E7A4F',
+  cream: '#F7F3E9',
+  ivory: '#FFFDF7',
+  beige: '#E8DCC5',
+  wood: '#A87950',
+  gold: '#D9A55B',
 }
 
-// TODO: ganti dengan data menu dari Firestore
-const products = [
-  { id: 'jasmine-milk-tea', cat: 'Milk Tea', name: 'Jasmine Milk Tea', desc: 'Creamy milk tea dengan aroma melati yang lembut.', price: 24000, color: '#E9D9C2', imageUrl: '/images/menu/jasmine-milk-tea.png' },
-  { id: 'classic-green-tea', cat: 'Pure Tea', name: 'Classic Green Tea', desc: 'Teh hijau murni, segar dan menenangkan.', price: 20000, color: '#B9C79F', imageUrl: '/images/menu/classic-green-tea.png' },
-  { id: 'brown-sugar-milk-tea', cat: 'Milk Tea', name: 'Brown Sugar Milk Tea', desc: 'Susu lembut dengan lapisan brown sugar yang kaya.', price: 26000, color: '#A87950', imageUrl: '/images/menu/brown-sugar-milk-tea.png' },
-  { id: 'oolong-tea', cat: 'Pure Tea', name: 'Oolong Tea', desc: 'Oolong amber dengan aroma harum dan akhir rasa halus.', price: 22000, color: '#D9A55B', imageUrl: '/images/menu/oolong-tea.png' },
-  { id: 'jasmine-oolong', cat: 'Signature', name: 'Jasmine Oolong', desc: 'Perpaduan melati dan oolong yang floral dan seimbang.', price: 24000, color: '#E3B567', imageUrl: '/images/menu/jasmine-oolong.png' },
-  { id: 'matcha-latte', cat: 'Signature', name: 'Matcha Latte', desc: 'Matcha premium dengan milk foam yang lembut.', price: 28000, color: '#8A9B79', imageUrl: '/images/menu/matcha-latte.png' },
-]
-
-const perks = [
-  { t: 'Premium Tea Leaves', d: 'Daun teh pilihan, diseduh pada suhu yang tepat.', icon: 'eco' },
-  { t: 'Fresh Ingredients', d: 'Bahan segar setiap hari, tanpa kompromi.', icon: 'nutrition' },
-  { t: 'Balanced Taste', d: 'Manis, pahit, dan wangi dalam takaran seimbang.', icon: 'balance' },
-  { t: 'Made with Love', d: 'Setiap cup dibuat dengan perhatian penuh.', icon: 'favorite' },
-]
-
-const navItems = [['Story', 'story'], ['Menu', 'menu'], ['Why Us', 'why'], ['Promo', 'promo'], ['Gallery', 'gallery']]
-
-const C = { cream: '#F7F3E9', ivory: '#FFFDF7', sage: '#8A9B79', forest: '#123D2A', dark: '#092D20', beige: '#E9D9C2', wood: '#A87950' }
 const serif = { fontFamily: "'Playfair Display', Georgia, serif" }
-const rupiah = (n) => 'Rp ' + n.toLocaleString('id-ID')
+const sans = { fontFamily: "'DM Sans', system-ui, -apple-system, sans-serif" }
+const rupiah = (n) => 'Rp ' + Number(n).toLocaleString('id-ID')
 
-/* ---------- helpers ---------- */
+/* ============================================================
+   DATA PRODUK MENU & BEST SELLER
+   ============================================================ */
+const products = [
+  {
+    id: 'jasmine-milk-tea',
+    cat: 'Milk Tea',
+    name: 'Jasmine Milk Tea',
+    desc: 'Creamy milk tea dengan keharuman bunga melati alami yang menenangkan.',
+    price: 24000,
+    color: '#E9D9C2',
+    imageUrl: '/images/menu/jasmine-milk-tea.png',
+    isBestSeller: true,
+  },
+  {
+    id: 'classic-green-tea',
+    cat: 'Pure Tea',
+    name: 'Classic Green Tea',
+    desc: 'Seduhan teh hijau murni pegunungan, kaya antioksidan dan menyegarkan.',
+    price: 20000,
+    color: '#B9C79F',
+    imageUrl: '/images/menu/classic-green-tea.png',
+    isBestSeller: false,
+  },
+  {
+    id: 'brown-sugar-milk-tea',
+    cat: 'Milk Tea',
+    name: 'Brown Sugar Milk Tea',
+    desc: 'Perpaduan susu segar dengan karamel brown sugar organik yang gurih lembut.',
+    price: 26000,
+    color: '#A87950',
+    imageUrl: '/images/menu/brown-sugar-milk-tea.png',
+    isBestSeller: true,
+  },
+  {
+    id: 'oolong-tea',
+    cat: 'Pure Tea',
+    name: 'Oolong Tea',
+    desc: 'Teh oolong amber artisanal dengan aroma panggang halus dan aftertaste manis.',
+    price: 22000,
+    color: '#D9A55B',
+    imageUrl: '/images/menu/oolong-tea.png',
+    isBestSeller: false,
+  },
+  {
+    id: 'jasmine-oolong',
+    cat: 'Signature',
+    name: 'Jasmine Oolong',
+    desc: 'Harmoni floral melati dan karakter kuat oolong, racikan signature Justmine.',
+    price: 24000,
+    color: '#E3B567',
+    imageUrl: '/images/menu/jasmine-oolong.png',
+    isBestSeller: true,
+  },
+  {
+    id: 'matcha-latte',
+    cat: 'Signature',
+    name: 'Matcha Latte',
+    desc: 'Matcha Uji premium dengan lapisan milk foam lembut bertekstur sutra.',
+    price: 28000,
+    color: '#8A9B79',
+    imageUrl: '/images/menu/matcha-latte.png',
+    isBestSeller: true,
+  },
+]
+
+/* ============================================================
+   TESTIMONIALS
+   ============================================================ */
+const reviews = [
+  {
+    name: 'Alya Rahma',
+    role: 'Pecinta Melati',
+    rating: 5,
+    text: 'Jasmine Milk Tea-nya wangi banget dan manisnya pas, nggak bikin enek. Selalu pesan buat nemenin kerja sore!',
+    initial: 'A',
+  },
+  {
+    name: 'Dimas Prasetyo',
+    role: 'Customer Tetap',
+    rating: 5,
+    text: 'Rasa teh aslinya berasa banget, bukan sekadar perisa sirup. Tempat dan cup-nya juga sangat estetik dan ramah lingkungan.',
+    initial: 'D',
+  },
+  {
+    name: 'Nadia Salsabila',
+    role: 'Food Blogger Tangsel',
+    rating: 5,
+    text: 'Matcha Latte dan Jasmine Oolong-nya juara! Foam-nya halus banget dan ada wangi floral melati yang bikin rileks.',
+    initial: 'N',
+  },
+  {
+    name: 'Rizky Mahendra',
+    role: 'Book Enthusiast',
+    rating: 5,
+    text: 'Paling suka duduk baca buku sambil minum Oolong Tea dingin. Mood langsung balik segar lagi.',
+    initial: 'R',
+  },
+]
+
+/* ============================================================
+   HELPER FUNCTIONS & HOOKS
+   ============================================================ */
 function scrollToId(id) {
-  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const el = document.getElementById(id)
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 }
 
 function useReveal() {
@@ -58,7 +147,15 @@ function useReveal() {
   useEffect(() => {
     const el = ref.current
     if (!el || !('IntersectionObserver' in window)) return setShown(true)
-    const io = new IntersectionObserver(([e]) => e.isIntersecting && (setShown(true), io.disconnect()), { threshold: 0.12 })
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShown(true)
+          io.disconnect()
+        }
+      },
+      { threshold: 0.1 }
+    )
     io.observe(el)
     return () => io.disconnect()
   }, [])
@@ -68,18 +165,24 @@ function useReveal() {
 function Reveal({ children, className = '', delay = 0 }) {
   const [ref, shown] = useReveal()
   return (
-    <div ref={ref} style={{ transitionDelay: `${delay}ms` }} className={`jt-reveal ${shown ? 'jt-in' : ''} ${className}`}>
+    <div
+      ref={ref}
+      style={{ transitionDelay: `${delay}ms` }}
+      className={`jt-reveal ${shown ? 'jt-in' : ''} ${className}`}
+    >
       {children}
     </div>
   )
 }
 
-/* ---------- decorations ---------- */
+/* ============================================================
+   DEKORATIF ELEMEN SVG (DAUN & MELATI)
+   ============================================================ */
 function Leaf({ className = '', color = C.sage }) {
   return (
     <svg viewBox="0 0 100 60" className={className} aria-hidden="true">
       <path d="M2 30C25 2 70 0 98 28 72 58 25 60 2 30Z" fill={color} />
-      <path d="M6 30C35 28 65 28 94 28" stroke="#ffffff55" strokeWidth="1.5" fill="none" />
+      <path d="M6 30C35 28 65 28 94 28" stroke="#ffffff40" strokeWidth="1.5" fill="none" />
     </svg>
   )
 }
@@ -88,31 +191,26 @@ function Jasmine({ className = '' }) {
   return (
     <svg viewBox="0 0 60 60" className={className} aria-hidden="true">
       {[0, 72, 144, 216, 288].map((r) => (
-        <ellipse key={r} cx="30" cy="16" rx="8" ry="14" fill="#FFFDF7" stroke="#E9D9C2" strokeWidth="1" transform={`rotate(${r} 30 30)`} />
+        <ellipse
+          key={r}
+          cx="30"
+          cy="16"
+          rx="8"
+          ry="14"
+          fill="#FFFDF7"
+          stroke="#E8DCC5"
+          strokeWidth="1"
+          transform={`rotate(${r} 30 30)`}
+        />
       ))}
-      <circle cx="30" cy="30" r="4.5" fill="#E3B567" />
+      <circle cx="30" cy="30" r="4.5" fill="#D9A55B" />
     </svg>
-  )
-}
-
-/* ---------- photo with safe fallback ---------- */
-function Photo({ src, alt, className = '', hint, imgClass = '' }) {
-  const [failed, setFailed] = useState(false)
-  if (src && !failed) {
-    return <img src={src} alt={alt} loading="lazy" onError={() => setFailed(true)} className={`w-full h-full object-cover ${imgClass}`} />
-  }
-  return (
-    <div className={`w-full h-full flex flex-col items-center justify-center gap-2 text-center p-4 border-2 border-dashed ${className}`} style={{ borderColor: `${C.sage}88`, background: `linear-gradient(135deg, ${C.beige}, ${C.cream})`, color: C.forest }}>
-      <span className="material-symbols-outlined text-[36px] opacity-60">add_photo_alternate</span>
-      <span className="text-xs font-semibold">{alt}</span>
-      {hint && <span className="text-[11px] opacity-70 break-all">{hint}</span>}
-    </div>
   )
 }
 
 function CupArt({ color }) {
   return (
-    <svg viewBox="0 0 120 160" className="h-4/5 drop-shadow-lg" aria-hidden="true">
+    <svg viewBox="0 0 120 160" className="h-4/5 drop-shadow-md" aria-hidden="true">
       <rect x="22" y="14" width="76" height="16" rx="6" fill={C.ivory} stroke={C.beige} />
       <path d="M28 30h64l-8 118a6 6 0 0 1-6 5H42a6 6 0 0 1-6-5Z" fill={C.ivory} stroke={C.beige} />
       <path d="M31 62h58l-5 86a6 6 0 0 1-6 5H42a6 6 0 0 1-6-5Z" fill={color} opacity=".85" />
@@ -125,289 +223,464 @@ function CupArt({ color }) {
 function ProductPhoto({ p, className = '' }) {
   const [failed, setFailed] = useState(false)
   if (p.imageUrl && !failed) {
-    return <img src={p.imageUrl} alt={p.name} loading="lazy" onError={() => setFailed(true)} className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 ${className}`} />
+    return (
+      <img
+        src={p.imageUrl}
+        alt={p.name}
+        loading="lazy"
+        onError={() => setFailed(true)}
+        className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${className}`}
+      />
+    )
   }
   return (
-    <div className="w-full h-full flex items-end justify-center pb-3 transition-transform duration-700 group-hover:scale-105" style={{ background: `radial-gradient(circle at 50% 35%, ${C.ivory}, ${p.color}55)` }}>
+    <div
+      className={`w-full h-full flex items-end justify-center pb-3 transition-transform duration-500 group-hover:scale-105 ${className}`}
+      style={{ background: `radial-gradient(circle at 50% 35%, ${C.ivory}, ${p.color}45)` }}
+    >
       <CupArt color={p.color} />
     </div>
   )
 }
 
-function Stars({ n }) {
+function Stars({ count = 5 }) {
   return (
-    <div className="flex gap-0.5" aria-label={`${n} dari 5 bintang`}>
-      {[1, 2, 3, 4, 5].map((i) => (
-        <span key={i} className="material-symbols-outlined text-[18px]" style={{ color: i <= n ? '#D9A55B' : C.beige, fontVariationSettings: "'FILL' 1" }}>star</span>
+    <div className="flex gap-1" aria-label={`${count} dari 5 bintang`}>
+      {[...Array(5)].map((_, i) => (
+        <span
+          key={i}
+          className="material-symbols-outlined text-[17px]"
+          style={{ color: i < count ? '#D9A55B' : '#E8DCC5', fontVariationSettings: "'FILL' 1" }}
+        >
+          star
+        </span>
       ))}
     </div>
   )
 }
 
-function Btn({ children, onClick, to, variant = 'solid', className = '' }) {
-  const base = 'inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8A9B79]'
-  const styles = {
-    solid: 'bg-[#123D2A] text-[#FFFDF7] hover:bg-[#092D20] hover:shadow-lg',
-    outline: 'border border-[#123D2A] text-[#123D2A] hover:bg-[#123D2A] hover:text-[#FFFDF7]',
-    light: 'bg-[#FFFDF7] text-[#123D2A] hover:bg-[#E9D9C2]',
-  }
-  const cls = `${base} ${styles[variant]} ${className}`
-  if (to) return <Link to={to} className={cls}>{children}</Link>
-  return <button type="button" onClick={onClick} className={cls}>{children}</button>
-}
+/* ============================================================
+   NAVBAR (MOBILE & DESKTOP)
+   ============================================================ */
+function NavigationBar() {
+  const { items } = useCart()
+  const { open: openCart } = useCartSheet()
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
 
-/* ---------- hero ---------- */
-function Hero() {
-  const bg = useRef(null)
+  const cartCount = items.reduce((sum, i) => sum + i.qty, 0)
+
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const onScroll = () => bg.current && (bg.current.style.transform = `translateY(${Math.min(window.scrollY, 600) * 0.12}px)`)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const highlights = [
-    ['eco', 'Premium Tea Leaves'],
-    ['local_cafe', 'Refreshing Taste'],
-    ['favorite', 'Better Together'],
-  ]
-
   return (
-    <section
-      id="top"
-      className="relative overflow-hidden w-full bg-[#F7F3E9] lg:h-[850px] lg:min-h-[850px] flex flex-col lg:flex-row lg:items-center"
-    >
-      {/* 1. Desktop Background Foto full-width, object-right, absolute inset-0 */}
+    <>
+      {/* Desktop Header */}
+      <header
+        className={`hidden lg:block fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
+          scrolled
+            ? 'bg-[#F7F3E9]/95 backdrop-blur-md shadow-sm border-b border-[#124734]/10 py-3.5'
+            : 'bg-transparent py-5'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-8 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-3 group">
+            <img
+              src={iconImg}
+              alt="Justmine Tea Logo"
+              className="w-10 h-10 rounded-full object-contain border border-[#124734]/20 transition-transform group-hover:rotate-6"
+            />
+            <span className="text-2xl font-bold tracking-tight text-[#124734]" style={serif}>
+              Justmine Tea
+            </span>
+          </Link>
+
+          <nav className="flex items-center gap-8 text-sm font-medium text-[#124734]/90">
+            <Link to="/menu" className="hover:text-[#124734] jt-link transition-colors">
+              Menu
+            </Link>
+            <button onClick={() => scrollToId('bestseller')} className="hover:text-[#124734] jt-link transition-colors">
+              Best Seller
+            </button>
+            <button onClick={() => scrollToId('promo')} className="hover:text-[#124734] jt-link transition-colors">
+              Promo
+            </button>
+            <button onClick={() => scrollToId('story')} className="hover:text-[#124734] jt-link transition-colors">
+              About Us
+            </button>
+            <button onClick={() => scrollToId('reviews')} className="hover:text-[#124734] jt-link transition-colors">
+              Reviews
+            </button>
+          </nav>
+
+          <div className="flex items-center gap-4">
+            <button
+              onClick={openCart}
+              className="relative w-11 h-11 rounded-full bg-white/90 backdrop-blur-sm border border-stone-200/80 shadow-xs flex items-center justify-center text-[#124734] hover:bg-white hover:scale-105 active:scale-95 transition-all"
+              aria-label={`Keranjang belanja (${cartCount} produk)`}
+            >
+              <span className="material-symbols-outlined text-[22px]">shopping_bag</span>
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[20px] h-[20px] px-1 bg-[#D9383A] text-white text-[11px] font-bold rounded-full flex items-center justify-center shadow-xs animate-in zoom-in">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+
+            <Link
+              to="/menu"
+              className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold bg-[#124734] text-[#FFFDF7] shadow-sm hover:bg-[#092D20] hover:shadow-md transition-all active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[18px]">shopping_cart</span>
+              Order Now
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile Floating Header (Presisi sesuai Mockup Smartphone) */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-40 transition-colors duration-200">
+        <div
+          className={`px-4 pt-3.5 pb-2.5 flex items-center justify-between ${
+            scrolled ? 'bg-[#F7F3E9]/95 backdrop-blur-md shadow-xs' : 'bg-transparent'
+          }`}
+        >
+          {/* Logo Brand di Kiri */}
+          <Link to="/" className="flex items-center gap-2.5">
+            <img
+              src={iconImg}
+              alt="Logo"
+              className="w-10 h-10 rounded-full object-contain border border-[#124734]/15 shadow-xs bg-white/80"
+            />
+            <span className="text-xl font-bold tracking-tight text-[#124734]" style={serif}>
+              Justmine Tea
+            </span>
+          </Link>
+
+          {/* Cart & Hamburger di Kanan */}
+          <div className="flex items-center gap-2.5">
+            {/* Tombol Cart dengan Badge Merah */}
+            <button
+              onClick={openCart}
+              className="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md shadow-md border border-stone-200/60 flex items-center justify-center text-[#124734] active:scale-90 transition-transform relative"
+              aria-label={`Buka Keranjang (${cartCount} item)`}
+            >
+              <span className="material-symbols-outlined text-[20px]">shopping_cart</span>
+              <span
+                className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs ${
+                  cartCount > 0 ? 'bg-[#D9383A]' : 'bg-[#D9383A]'
+                }`}
+              >
+                {cartCount}
+              </span>
+            </button>
+
+            {/* Tombol Hamburger Menu */}
+            <button
+              onClick={() => setDrawerOpen(true)}
+              className="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md shadow-md border border-stone-200/60 flex items-center justify-center text-[#124734] active:scale-90 transition-transform"
+              aria-label="Buka navigasi menu"
+            >
+              <span className="material-symbols-outlined text-[22px]">menu</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile Slide-Over Drawer Navigation */}
+      {drawerOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 flex">
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity jt-fade"
+            onClick={() => setDrawerOpen(false)}
+            aria-hidden="true"
+          />
+          <div
+            className="relative ml-auto w-4/5 max-w-xs h-full bg-[#F7F3E9] p-6 shadow-2xl flex flex-col justify-between z-10 jt-drawer"
+            style={sans}
+          >
+            <div>
+              <div className="flex items-center justify-between pb-6 border-b border-[#124734]/15">
+                <div className="flex items-center gap-2.5">
+                  <img src={iconImg} alt="Logo" className="w-8 h-8 rounded-full object-contain" />
+                  <span className="font-bold text-lg text-[#124734]" style={serif}>
+                    Justmine Tea
+                  </span>
+                </div>
+                <button
+                  onClick={() => setDrawerOpen(false)}
+                  className="w-9 h-9 rounded-full bg-white/80 flex items-center justify-center text-[#124734] border border-[#124734]/10"
+                  aria-label="Tutup Menu"
+                >
+                  <span className="material-symbols-outlined text-[20px]">close</span>
+                </button>
+              </div>
+
+              <nav className="mt-6 flex flex-col gap-4 text-base font-medium text-[#124734]">
+                <Link
+                  to="/menu"
+                  onClick={() => setDrawerOpen(false)}
+                  className="flex items-center justify-between py-2.5 border-b border-[#124734]/10 hover:text-[#5E7A4F]"
+                >
+                  <span>Katalog Menu</span>
+                  <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                </Link>
+                <button
+                  onClick={() => {
+                    setDrawerOpen(false)
+                    scrollToId('bestseller')
+                  }}
+                  className="flex items-center justify-between py-2.5 border-b border-[#124734]/10 text-left hover:text-[#5E7A4F]"
+                >
+                  <span>Best Seller</span>
+                  <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setDrawerOpen(false)
+                    scrollToId('promo')
+                  }}
+                  className="flex items-center justify-between py-2.5 border-b border-[#124734]/10 text-left hover:text-[#5E7A4F]"
+                >
+                  <span>Promo Spesial</span>
+                  <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setDrawerOpen(false)
+                    scrollToId('story')
+                  }}
+                  className="flex items-center justify-between py-2.5 border-b border-[#124734]/10 text-left hover:text-[#5E7A4F]"
+                >
+                  <span>Tentang Kami</span>
+                  <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setDrawerOpen(false)
+                    scrollToId('reviews')
+                  }}
+                  className="flex items-center justify-between py-2.5 border-b border-[#124734]/10 text-left hover:text-[#5E7A4F]"
+                >
+                  <span>Ulasan Pelanggan</span>
+                  <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                </button>
+                <Link
+                  to="/history"
+                  onClick={() => setDrawerOpen(false)}
+                  className="flex items-center justify-between py-2.5 border-b border-[#124734]/10 hover:text-[#5E7A4F]"
+                >
+                  <span>Riwayat Pesanan</span>
+                  <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                </Link>
+              </nav>
+            </div>
+
+            <div className="space-y-4 pt-6 border-t border-[#124734]/15">
+              <Link
+                to="/menu"
+                onClick={() => setDrawerOpen(false)}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-full bg-[#124734] text-white text-sm font-semibold shadow-md active:scale-95 transition-transform"
+              >
+                <span className="material-symbols-outlined text-[18px]">shopping_cart</span>
+                Pesan Sekarang
+              </Link>
+              <p className="text-center text-xs text-[#124734]/70">
+                Good Tea, Good Mood • 10.00 - 22.00 WIB
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+/* ============================================================
+   HERO SECTION (PRESISI SESUAI MOCKUP SMARTPHONE & DESKTOP)
+   ============================================================ */
+function HeroSection() {
+  return (
+    <section id="top" className="relative w-full overflow-hidden bg-[#F7F3E9]">
+      {/* 1. Desktop Background Full-Width Hero */}
       <div className="hidden lg:block absolute inset-0 w-full h-full pointer-events-none z-0">
-        <Photo
-          src={IMAGES.heroGirl}
-          alt="Foto cewek + 3 cup Justmine Tea"
-          hint="src/assets/cha.png"
-          className="w-full h-full"
-          imgClass="w-full h-full object-cover object-right"
+        <img
+          src={chaImg}
+          alt="Gadis menikmati Justmine Tea"
+          className="w-full h-full object-cover object-right"
         />
-      </div>
-
-      {/* 2. Desktop Overlay Gradient (kiri ke kanan) */}
-      <div
-        className="hidden lg:block absolute inset-0 pointer-events-none z-[1]"
-        style={{
-          background:
-            'linear-gradient(90deg, #F7F3E9 0%, #F7F3E9 30%, rgba(247,243,233,0.85) 42%, rgba(247,243,233,0) 65%)',
-        }}
-        aria-hidden="true"
-      />
-
-      {/* 3. Fade di tepi bawah hero (menghubungkan mulus ke #FFFDF7 Story) */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-[120px] pointer-events-none z-[2]"
-        style={{
-          background: 'linear-gradient(180deg, rgba(255,253,247,0) 0%, #FFFDF7 100%)',
-        }}
-        aria-hidden="true"
-      />
-
-      {/* Parallax / Floating Leaves dekorasi */}
-      <div ref={bg} className="hidden lg:block absolute inset-0 pointer-events-none z-[3]" aria-hidden="true">
-        <Leaf className="absolute top-24 left-[44%] w-16 rotate-[25deg] opacity-70" />
-        <Jasmine className="absolute top-40 left-[38%] w-12 opacity-80" />
-      </div>
-
-      {/* 5. Mobile (<1024px): Foto di atas (tinggi 420px, object-position kanan) + Gradient vertikal */}
-      <div className="block lg:hidden relative w-full h-[420px] shrink-0 overflow-hidden bg-[#F7F3E9] z-0">
-        <Photo
-          src={IMAGES.heroGirl}
-          alt="Foto cewek + 3 cup Justmine Tea"
-          hint="src/assets/cha.png"
-          className="w-full h-full"
-          imgClass="w-full h-full object-cover object-right"
-        />
-        {/* Gradient vertikal di atas foto mobile (transparan di atas, #F7F3E9 di bawah) */}
+        {/* Desktop Gradient Overlay Kiri ke Kanan */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              'linear-gradient(180deg, rgba(247,243,233,0) 0%, rgba(247,243,233,0.4) 50%, #F7F3E9 100%)',
+              'linear-gradient(90deg, #F7F3E9 0%, #F7F3E9 32%, rgba(247,243,233,0.85) 45%, rgba(247,243,233,0) 65%)',
           }}
           aria-hidden="true"
         />
-        <Jasmine className="absolute bottom-4 right-4 w-12" />
+        {/* Fade Lembut ke Bawah */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+          style={{
+            background: 'linear-gradient(180deg, rgba(247,243,233,0) 0%, #F7F3E9 100%)',
+          }}
+          aria-hidden="true"
+        />
       </div>
 
-      {/* 4. Teks di kolom kiri, max-width ~560px, vertikal center di desktop */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-5 lg:px-8 flex items-center">
-        <div className="w-full max-w-[560px] space-y-6 pt-4 pb-12 lg:py-0 text-left">
-          <p className="flex items-center gap-3 text-sm font-semibold tracking-widest" style={{ color: C.wood }}>
-            GOOD TEA, GOOD MOOD <span className="h-px w-16" style={{ background: C.wood }} />
-          </p>
+      {/* 2. Mobile Visual Utama: Foto Full-Width (Tepat Sesuai Mockup) */}
+      <div className="lg:hidden relative w-full h-[470px] sm:h-[530px] overflow-hidden shrink-0">
+        <img
+          src={chaImg}
+          alt="Gadis minum Justmine Tea sambil membaca novel Negeri Para Bedebah"
+          className="w-full h-full object-cover object-[center_16%]"
+        />
+        {/* Soft Mist Gradient Vertikal dari Atas Transparan ke Cream di Bawah */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              'linear-gradient(180deg, rgba(247,243,233,0) 0%, rgba(247,243,233,0) 45%, rgba(247,243,233,0.6) 72%, #F7F3E9 100%)',
+          }}
+          aria-hidden="true"
+        />
+      </div>
 
-          <h1 className="text-4xl sm:text-6xl xl:text-7xl leading-[1.05] font-semibold" style={{ ...serif, color: C.forest }}>
-            Justmine Tea <em className="font-normal">in Every Sip</em>
+      {/* 3. Teks & CTA Hero */}
+      <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:min-h-[820px] flex items-center">
+        <div className="w-full max-w-[560px] pt-1 pb-12 lg:py-24 text-left">
+          {/* Eyebrow Tagline */}
+          <div className="flex items-center gap-2.5 mb-3">
+            <span className="text-xs sm:text-sm font-semibold tracking-[0.2em] text-[#124734]/80 uppercase">
+              GOOD TEA, GOOD MOOD
+            </span>
+            <span className="h-[1.5px] w-8 sm:w-12 bg-[#124734]/40" />
+          </div>
+
+          {/* Headline Utama */}
+          <h1
+            className="text-4xl sm:text-6xl lg:text-7xl font-semibold leading-[1.08] text-[#124734] tracking-tight"
+            style={serif}
+          >
+            Justmine Tea <em className="italic font-normal">in</em> <br />
+            Every Sip
           </h1>
 
-          <p className="text-base sm:text-lg max-w-sm sm:max-w-md leading-relaxed" style={{ color: C.sage }}>
+          {/* Deskripsi Singkat */}
+          <p className="mt-3.5 sm:mt-5 text-sm sm:text-base lg:text-lg text-[#124734]/80 max-w-md leading-relaxed font-normal">
             Pure tea, balanced taste, made for your everyday.
           </p>
 
-          <div className="flex flex-wrap gap-3 pt-1">
-            <Btn to="/menu">
-              <span className="material-symbols-outlined text-[18px]">shopping_bag</span>Order Now
-            </Btn>
-            <Btn variant="outline" onClick={() => scrollToId('menu')}>
-              Explore Menu
-            </Btn>
-          </div>
-
-          <ul className="flex flex-wrap gap-x-6 gap-y-3 pt-3">
-            {highlights.map(([icon, label]) => (
-              <li key={label} className="flex items-center gap-2 text-sm font-medium" style={{ color: C.forest }}>
-                <span className="w-9 h-9 rounded-full flex items-center justify-center border bg-[#FFFDF7]/60" style={{ borderColor: C.sage }}>
-                  <span className="material-symbols-outlined text-[18px]">{icon}</span>
-                </span>
-                {label}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-/* ---------- story ---------- */
-function Story() {
-  return (
-    <section id="story" className="relative overflow-hidden" style={{ background: C.ivory }}>
-      <div className="grid lg:grid-cols-2 items-stretch">
-        <Reveal className="relative h-[340px] lg:h-auto lg:min-h-[520px] group overflow-hidden">
-          <Photo src={IMAGES.story} alt="Foto close-up teh, melati, daun teh" hint="public/images/story-tea.jpg" imgClass="transition-transform duration-700 group-hover:scale-105" />
-          <Jasmine className="absolute bottom-6 right-6 w-20" />
-          <Leaf className="absolute top-8 right-10 w-24 rotate-[-20deg]" color="#5E7A4F" />
-        </Reveal>
-        <Reveal delay={120} className="relative flex items-center px-6 sm:px-12 lg:px-20 py-16">
-          <div className="space-y-5 max-w-lg relative z-10">
-            <p className="text-sm font-semibold tracking-widest" style={{ color: C.wood }}>Our Story</p>
-            <h2 className="text-4xl lg:text-5xl leading-tight font-medium" style={{ ...serif, color: C.forest }}>A Little Moment of Tea, A Lot of Happiness</h2>
-            <p className="leading-relaxed text-base" style={{ color: `${C.forest}cc` }}>Every cup tells a story of quality, freshness, and happiness. Discover the little moments that make every sip special.</p>
-            <Btn onClick={() => scrollToId('why')}>Learn More</Btn>
-          </div>
-          <Leaf className="absolute -bottom-6 -right-6 w-48 opacity-40" />
-        </Reveal>
-      </div>
-    </section>
-  )
-}
-
-/* ---------- menu ---------- */
-function Menu() {
-  const [active, setActive] = useState(null)
-
-  useEffect(() => {
-    if (!active) return
-    const onKey = (e) => e.key === 'Escape' && setActive(null)
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [active])
-
-  return (
-    <section id="menu" className="relative py-20 lg:py-28 overflow-hidden" style={{ background: C.cream }}>
-      <Jasmine className="absolute -left-4 top-10 w-24 opacity-90" />
-      <Leaf className="absolute right-4 top-16 w-24 rotate-[160deg]" />
-      <div className="max-w-7xl mx-auto px-5 lg:px-8 relative">
-        <Reveal className="text-center max-w-2xl mx-auto space-y-4">
-          <p className="text-sm font-semibold tracking-widest" style={{ color: C.wood }}>Our Signature Menu</p>
-          <h2 className="text-4xl lg:text-6xl font-medium" style={{ ...serif, color: C.forest }}>Discover Your Perfect Sip</h2>
-          <p style={{ color: `${C.forest}cc` }}>Explore our signature tea collection, crafted to make every moment refreshing.</p>
-        </Reveal>
-
-        {/* Grid Menu Tanpa Filter & Tanpa Tag */}
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {products.map((p, i) => (
-            <Reveal key={p.id} delay={i * 70}>
-              <article
-                onClick={() => setActive(p)}
-                className="group rounded-3xl overflow-hidden flex flex-col h-full cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl text-left"
-                style={{ background: C.ivory, boxShadow: '0 10px 30px -12px rgba(18,61,42,.25)' }}
-                role="button"
-                tabIndex={0}
-                aria-label={`Lihat detail ${p.name}`}
-              >
-                <div className="relative h-72 sm:h-80 overflow-hidden">
-                  <ProductPhoto p={p} />
-                </div>
-                <div className="p-6 flex flex-col flex-1 gap-2">
-                  <h3 className="text-2xl font-semibold transition-colors group-hover:text-[#366A4E]" style={{ ...serif, color: C.forest }}>
-                    {p.name}
-                  </h3>
-                  <p className="text-sm leading-relaxed" style={{ color: `${C.forest}b3` }}>
-                    {p.desc}
-                  </p>
-                  <div className="mt-auto pt-4 flex items-center justify-between">
-                    <span className="text-xl font-bold" style={{ color: C.forest }}>{rupiah(p.price)}</span>
-                  </div>
-                </div>
-              </article>
-            </Reveal>
-          ))}
-        </div>
-      </div>
-
-      {/* Modal Popup Muncul ke Tengah Layar Saat Menu Diklik */}
-      {active && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md jt-fade"
-          onClick={() => setActive(null)}
-          role="dialog"
-          aria-modal="true"
-          aria-label={active.name}
-        >
-          <div
-            className="relative w-full max-w-2xl rounded-3xl overflow-hidden grid sm:grid-cols-2 shadow-2xl jt-modal-center"
-            style={{ background: C.ivory }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="h-64 sm:h-auto sm:min-h-[380px]">
-              <ProductPhoto p={active} />
-            </div>
-            <div className="p-8 flex flex-col justify-center gap-3 text-left">
-              <h3 className="text-3xl font-semibold" style={{ ...serif, color: C.forest }}>{active.name}</h3>
-              <p className="leading-relaxed text-sm" style={{ color: `${C.forest}cc` }}>{active.desc}</p>
-              <p className="text-2xl font-bold pt-2" style={{ color: C.forest }}>{rupiah(active.price)}</p>
-            </div>
-            <button
-              onClick={() => setActive(null)}
-              className="absolute top-3 right-3 w-10 h-10 rounded-full flex items-center justify-center transition-transform hover:scale-110 active:scale-95 shadow-xs"
-              style={{ background: C.cream, color: C.forest }}
-              aria-label="Tutup"
+          {/* Dua Tombol CTA Proporsional */}
+          <div className="flex items-center gap-3 mt-6 sm:mt-8">
+            <Link
+              to="/menu"
+              className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold bg-[#124734] text-[#FFFDF7] shadow-md hover:bg-[#092D20] active:scale-95 transition-all"
             >
-              <span className="material-symbols-outlined text-[20px]">close</span>
+              <span className="material-symbols-outlined text-[18px]">shopping_bag</span>
+              <span>Order Now</span>
+              <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => scrollToId('menu')}
+              className="inline-flex items-center justify-center gap-1.5 rounded-full px-5 py-3.5 text-sm font-semibold border border-[#124734]/40 text-[#124734] bg-white/40 hover:bg-[#124734]/5 active:scale-95 transition-all"
+            >
+              <span>Explore Menu</span>
+              <span className="material-symbols-outlined text-[16px]">chevron_right</span>
             </button>
           </div>
-        </div>
-      )}
-    </section>
-  )
-}
 
-/* ---------- why ---------- */
-function Why() {
-  return (
-    <section id="why" className="relative py-20 overflow-hidden" style={{ background: C.sage }}>
-      <Leaf className="absolute -right-10 top-0 w-64 opacity-30" color={C.forest} />
-      <Jasmine className="absolute left-6 bottom-6 w-16 opacity-80" />
-      <div className="max-w-7xl mx-auto px-5 lg:px-8 relative grid lg:grid-cols-12 gap-10 items-center">
-        <Reveal className="lg:col-span-4 space-y-3">
-          <p className="text-sm font-semibold tracking-widest" style={{ color: C.forest }}>Why Choose Justmine Tea</p>
-          <h2 className="text-4xl lg:text-5xl font-medium" style={{ ...serif, color: C.dark }}>Quality You Can Taste</h2>
-        </Reveal>
-        <div className="lg:col-span-8 grid grid-cols-2 lg:grid-cols-4 lg:divide-x divide-[#123D2A33]">
-          {perks.map((p, i) => (
-            <Reveal key={p.t} delay={i * 90} className="px-4 py-4 text-center space-y-3">
-              <span className="mx-auto w-16 h-16 rounded-full flex items-center justify-center" style={{ background: C.cream, color: C.forest }}>
-                <span className="material-symbols-outlined text-[30px]">{p.icon}</span>
+          {/* 3 Keunggulan Ikon Baris (Persis Seperti Mockup Lampiran) */}
+          <div className="grid grid-cols-3 divide-x divide-[#124734]/20 pt-6 mt-6 border-t border-[#124734]/15 max-w-md">
+            {/* 1. Premium Tea Leaves */}
+            <div className="flex items-center gap-2 pr-2">
+              <span className="w-8 h-8 rounded-full border border-[#124734]/30 flex items-center justify-center shrink-0 text-[#124734] bg-white/50">
+                <span className="material-symbols-outlined text-[17px]">eco</span>
               </span>
-              <h3 className="font-semibold" style={{ ...serif, color: C.dark }}>{p.t}</h3>
-              <p className="text-sm leading-relaxed" style={{ color: C.dark }}>{p.d}</p>
+              <span className="text-[11px] sm:text-xs font-medium text-[#124734] leading-tight">
+                Premium<br />Tea Leaves
+              </span>
+            </div>
+
+            {/* 2. Refreshing Taste */}
+            <div className="flex items-center gap-2 px-2">
+              <span className="w-8 h-8 rounded-full border border-[#124734]/30 flex items-center justify-center shrink-0 text-[#124734] bg-white/50">
+                <span className="material-symbols-outlined text-[17px]">favorite</span>
+              </span>
+              <span className="text-[11px] sm:text-xs font-medium text-[#124734] leading-tight">
+                Refreshing<br />Taste
+              </span>
+            </div>
+
+            {/* 3. Better Together */}
+            <div className="flex items-center gap-2 pl-2">
+              <span className="w-8 h-8 rounded-full border border-[#124734]/30 flex items-center justify-center shrink-0 text-[#124734] bg-white/50">
+                <span className="material-symbols-outlined text-[17px]">sentiment_satisfied</span>
+              </span>
+              <span className="text-[11px] sm:text-xs font-medium text-[#124734] leading-tight">
+                Better<br />Together
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ============================================================
+   BRAND BENEFITS SECTION (KEUNGGULAN BRAND)
+   ============================================================ */
+function BrandBenefits() {
+  const perks = [
+    {
+      icon: 'eco',
+      title: 'Premium Tea Leaves',
+      desc: 'Dipetik langsung dari perkebunan dataran tinggi, diolah dengan standar kualitas terbaik untuk aroma teh alami.',
+    },
+    {
+      icon: 'spa',
+      title: 'Refreshing Taste',
+      desc: 'Keseimbangan rasa manis dan kesegaran floral melati asli yang pas di lidah, menyejukkan di setiap tegukan.',
+    },
+    {
+      icon: 'group',
+      title: 'Better Together',
+      desc: 'Dibuat untuk menemani setiap perbincangan hangat, santai sore, maupun momen sendiri membaca buku favorit.',
+    },
+  ]
+
+  return (
+    <section className="py-12 lg:py-20 bg-[#F7F3E9] border-t border-[#124734]/10">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8">
+        <Reveal className="text-center max-w-xl mx-auto space-y-2 mb-10">
+          <p className="text-xs sm:text-sm font-semibold tracking-widest text-[#A87950] uppercase">
+            Mengapa Justmine Tea
+          </p>
+          <h2 className="text-2xl sm:text-4xl font-semibold text-[#124734]" style={serif}>
+            Kesegaran Alami di Setiap Cangkir
+          </h2>
+        </Reveal>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-8">
+          {perks.map((p, i) => (
+            <Reveal key={p.title} delay={i * 80}>
+              <div className="h-full rounded-2xl p-6 sm:p-8 bg-[#FFFDF7] border border-[#124734]/10 shadow-xs flex flex-col items-center text-center hover:shadow-md transition-shadow">
+                <div className="w-14 h-14 rounded-full bg-[#124734]/10 flex items-center justify-center text-[#124734] mb-4">
+                  <span className="material-symbols-outlined text-[28px]">{p.icon}</span>
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-[#124734] mb-2" style={serif}>
+                  {p.title}
+                </h3>
+                <p className="text-xs sm:text-sm text-[#124734]/75 leading-relaxed">{p.desc}</p>
+              </div>
             </Reveal>
           ))}
         </div>
@@ -416,155 +689,711 @@ function Why() {
   )
 }
 
-/* ---------- promo ---------- */
-function Promo() {
+/* ============================================================
+   BEST SELLER SECTION
+   ============================================================ */
+function BestSellerSection({ onSelectProduct, onAddToCart }) {
+  const bestSellers = products.filter((p) => p.isBestSeller)
+
   return (
-    <section id="promo" className="relative overflow-hidden" style={{ background: C.forest }}>
-      <Leaf className="absolute -right-8 bottom-0 w-72 opacity-40" color={C.sage} />
-      <Leaf className="absolute -left-10 bottom-4 w-40 rotate-[-30deg] opacity-30" color={C.sage} />
-      <Jasmine className="absolute left-[46%] top-10 w-12 hidden md:block" />
-      <div className="max-w-7xl mx-auto px-5 lg:px-8 py-16 lg:py-20 grid md:grid-cols-2 gap-10 items-center relative">
-        <Reveal className="space-y-5">
-          <h2 className="text-4xl lg:text-6xl font-medium leading-tight" style={{ ...serif, color: C.cream }}>Your Favorite Tea, Your Special Moment</h2>
-          <p className="text-lg" style={{ color: `${C.cream}dd` }}>Make every day a little sweeter with your favorite Justmine Tea.</p>
-          <Btn variant="light" to="/menu">Explore Promo</Btn>
-        </Reveal>
-        <Reveal delay={150} className="relative h-[340px] lg:h-[420px] flex justify-center">
-          <div className="h-full w-64 lg:w-72">
-            <Photo src={IMAGES.promoCup} alt="Foto cup Justmine besar" hint="public/images/promo-cup.png" className="rounded-3xl !bg-transparent" imgClass="object-contain" />
+    <section id="bestseller" className="py-12 lg:py-20 bg-[#FFFDF7]">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8">
+        <Reveal className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D9A55B]/15 text-[#A87950] text-xs font-semibold mb-2">
+              <span className="material-symbols-outlined text-[15px]">local_fire_department</span>
+              Favorit Pelanggan
+            </div>
+            <h2 className="text-2xl sm:text-4xl font-semibold text-[#124734]" style={serif}>
+              Menu Paling Dicintai
+            </h2>
           </div>
-          <span className="absolute top-2 right-[12%] w-28 h-28 rounded-full flex items-center justify-center text-center font-semibold leading-tight rotate-12 shadow-xl" style={{ ...serif, background: '#D9A55B', color: C.dark, border: `4px solid ${C.cream}` }}>Special<br />Promo</span>
+          <Link
+            to="/menu"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#124734] hover:text-[#5E7A4F] group"
+          >
+            <span>Lihat Semua Menu</span>
+            <span className="material-symbols-outlined text-[18px] transition-transform group-hover:translate-x-1">
+              arrow_forward
+            </span>
+          </Link>
         </Reveal>
+
+        {/* Responsive Grid: 2 kolom di mobile, 3 kolom di desktop */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3.5 sm:gap-6">
+          {bestSellers.map((item, i) => (
+            <Reveal key={item.id} delay={i * 80}>
+              <div
+                onClick={() => onSelectProduct(item)}
+                className="group rounded-2xl sm:rounded-3xl bg-[#F7F3E9] p-3 sm:p-5 border border-[#124734]/10 shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col justify-between cursor-pointer h-full text-left"
+                role="button"
+                tabIndex={0}
+              >
+                <div>
+                  <div className="relative aspect-square w-full rounded-xl sm:rounded-2xl overflow-hidden mb-3 bg-[#FFFDF7] flex items-center justify-center">
+                    <ProductPhoto p={item} />
+                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-[#124734] text-white text-[10px] sm:text-xs font-semibold shadow-xs">
+                      Best Seller
+                    </span>
+                  </div>
+                  <h3
+                    className="text-sm sm:text-lg font-bold text-[#124734] group-hover:text-[#5E7A4F] transition-colors line-clamp-1"
+                    style={serif}
+                  >
+                    {item.name}
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-[#124734]/70 mt-1 line-clamp-2 leading-relaxed">
+                    {item.desc}
+                  </p>
+                </div>
+
+                <div className="mt-3 pt-2.5 border-t border-[#124734]/10 flex items-center justify-between">
+                  <span className="text-xs sm:text-base font-bold text-[#124734]">
+                    {rupiah(item.price)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onAddToCart(item)
+                    }}
+                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#124734] text-white flex items-center justify-center hover:bg-[#092D20] active:scale-90 transition-transform shadow-xs"
+                    aria-label={`Tambah ${item.name} ke keranjang`}
+                  >
+                    <span className="material-symbols-outlined text-[16px] sm:text-[18px]">add</span>
+                  </button>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
       </div>
     </section>
   )
 }
 
-/* ---------- gallery ---------- */
-const galleryAlt = ['Customer pegang cup', 'Interior toko', 'Bunga melati', 'Cewek menikmati teh', 'Foto produk', 'Proses menyeduh teh']
-const galleryShape = ['row-span-2', '', '', 'row-span-2', '', '']
-
-function Gallery() {
+/* ============================================================
+   OUR MENU SECTION (KATALOG SIGNATURE TANPA TAG BERLEBIHAN)
+   ============================================================ */
+function OurMenuSection({ onSelectProduct, onAddToCart }) {
   return (
-    <section className="py-20 lg:py-28" style={{ background: C.cream }}>
-      <div className="max-w-7xl mx-auto px-5 lg:px-8">
-        <Reveal className="mb-10 flex flex-wrap items-end justify-between gap-4">
+    <section id="menu" className="py-12 lg:py-24 bg-[#F7F3E9] relative overflow-hidden">
+      <Leaf className="absolute -left-6 top-12 w-28 opacity-25" color={C.sageDark} />
+      <Jasmine className="absolute right-4 bottom-10 w-20 opacity-40" />
+
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 relative z-10">
+        <Reveal className="text-center max-w-xl mx-auto space-y-2 mb-10">
+          <p className="text-xs sm:text-sm font-semibold tracking-widest text-[#A87950] uppercase">
+            Signature Justmine
+          </p>
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-semibold text-[#124734]" style={serif}>
+            Koleksi Rasa Istimewa
+          </h2>
+          <p className="text-xs sm:text-sm text-[#124734]/75">
+            Diseduh dari racikan teh daun murni dan sentuhan melati yang seimbang.
+          </p>
+        </Reveal>
+
+        {/* Grid Menu: 2 kolom di mobile, 3 kolom di desktop */}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-6">
+          {products.map((item, i) => (
+            <Reveal key={item.id} delay={i * 60}>
+              <div
+                onClick={() => onSelectProduct(item)}
+                className="group rounded-2xl sm:rounded-3xl bg-[#FFFDF7] p-3.5 sm:p-5 border border-[#124734]/10 shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col justify-between cursor-pointer h-full text-left"
+                role="button"
+                tabIndex={0}
+              >
+                <div>
+                  <div className="relative aspect-square w-full rounded-xl sm:rounded-2xl overflow-hidden mb-3 bg-[#F7F3E9] flex items-center justify-center">
+                    <ProductPhoto p={item} />
+                  </div>
+                  <h3
+                    className="text-sm sm:text-lg font-bold text-[#124734] group-hover:text-[#5E7A4F] transition-colors line-clamp-1"
+                    style={serif}
+                  >
+                    {item.name}
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-[#124734]/70 mt-1 line-clamp-2 leading-relaxed">
+                    {item.desc}
+                  </p>
+                </div>
+
+                <div className="mt-3.5 pt-2.5 border-t border-[#124734]/10 flex items-center justify-between">
+                  <span className="text-xs sm:text-base font-bold text-[#124734]">
+                    {rupiah(item.price)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onAddToCart(item)
+                    }}
+                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#124734] text-white flex items-center justify-center hover:bg-[#092D20] active:scale-90 transition-transform shadow-xs"
+                    aria-label={`Tambah ${item.name}`}
+                  >
+                    <span className="material-symbols-outlined text-[16px] sm:text-[18px]">add</span>
+                  </button>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+
+        <div className="text-center mt-8 sm:mt-12">
+          <Link
+            to="/menu"
+            className="inline-flex items-center gap-2 rounded-full px-7 py-3 text-sm font-semibold bg-[#124734] text-[#FFFDF7] shadow-sm hover:bg-[#092D20] active:scale-95 transition-all"
+          >
+            <span className="material-symbols-outlined text-[18px]">menu_book</span>
+            <span>Buka Katalog Menu Lengkap</span>
+          </Link>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ============================================================
+   PROMOTIONAL BANNER SECTION
+   ============================================================ */
+function PromoBanner() {
+  return (
+    <section id="promo" className="py-12 lg:py-16 bg-[#124734] text-white relative overflow-hidden">
+      <Leaf className="absolute -right-8 -top-8 w-48 opacity-20" color="#FFF" />
+      <Leaf className="absolute -left-10 -bottom-10 w-52 opacity-20" color="#FFF" />
+
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+        <div className="max-w-xl space-y-2">
+          <span className="inline-block px-3 py-1 rounded-full bg-[#FFFDF7]/15 text-[#D9A55B] text-xs font-semibold uppercase tracking-wider">
+            Promo Spesial Hari Ini
+          </span>
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-medium tracking-tight" style={serif}>
+            Good Tea, Good Mood
+          </h2>
+          <p className="text-xs sm:text-base text-[#FFFDF7]/80 leading-relaxed">
+            Dapatkan diskon istimewa untuk pesanan pertamamu di Justmine Tea. Cicipi keharuman teh melati murni sekarang.
+          </p>
+        </div>
+
+        <Link
+          to="/menu"
+          className="inline-flex items-center gap-2 rounded-full px-8 py-3.5 text-sm font-semibold bg-[#FFFDF7] text-[#124734] hover:bg-[#E8DCC5] active:scale-95 shadow-lg transition-all shrink-0"
+        >
+          <span className="material-symbols-outlined text-[18px]">shopping_cart</span>
+          <span>Order Now</span>
+        </Link>
+      </div>
+    </section>
+  )
+}
+
+/* ============================================================
+   ABOUT JUSTMINE TEA (EDITORIAL STORY SECTION)
+   ============================================================ */
+function AboutStory() {
+  return (
+    <section id="story" className="py-12 lg:py-24 bg-[#FFFDF7] overflow-hidden">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-center">
+          {/* Visual Editorial */}
+          <Reveal className="relative rounded-3xl overflow-hidden shadow-md aspect-4/3 sm:aspect-16/10 lg:aspect-square bg-[#F7F3E9]">
+            <img
+              src={chaImg}
+              alt="Momen santai bersama Justmine Tea"
+              className="w-full h-full object-cover object-center"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#124734]/50 via-transparent to-transparent" />
+            <div className="absolute bottom-5 left-5 right-5 text-white">
+              <p className="text-xs tracking-widest uppercase font-semibold text-[#D9A55B]">
+                Artisanal Tea Craft
+              </p>
+              <h3 className="text-lg sm:text-xl font-bold" style={serif}>
+                Diseduh Dengan Ketulusan & Cinta
+              </h3>
+            </div>
+          </Reveal>
+
+          {/* Teks Cerita */}
+          <Reveal delay={100} className="space-y-4 sm:space-y-6 text-left">
+            <div>
+              <p className="text-xs sm:text-sm font-semibold tracking-widest text-[#A87950] uppercase mb-1">
+                Cerita Kami
+              </p>
+              <h2 className="text-2xl sm:text-4xl lg:text-5xl font-semibold text-[#124734] leading-tight" style={serif}>
+                A Little Moment of Tea, A Lot of Happiness
+              </h2>
+            </div>
+
+            <p className="text-xs sm:text-base text-[#124734]/80 leading-relaxed">
+              Bagi kami, secangkir teh bukan sekadar pelepas dahaga. Ia adalah jeda kecil di tengah ramainya dunia, pelukan hangat di sore hari, dan teman terbaik di setiap halaman buku yang kamu baca.
+            </p>
+
+            <p className="text-xs sm:text-base text-[#124734]/80 leading-relaxed">
+              Kami memadukan daun teh pilihan terbaik dari bumi nusantara dengan kuntum melati segar berkualitas tinggi. Di Justmine Tea, setiap racikan diseduh dengan suhu dan waktu presisi agar menghasilkan rasa murni yang seimbang dan menentramkan.
+            </p>
+
+            <div className="pt-2">
+              <Link
+                to="/menu"
+                className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold border border-[#124734] text-[#124734] hover:bg-[#124734] hover:text-white active:scale-95 transition-all"
+              >
+                <span>Jelajahi Minuman Kami</span>
+                <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              </Link>
+            </div>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ============================================================
+   CUSTOMER REVIEWS (TESTIMONIAL CAROUSEL)
+   ============================================================ */
+function CustomerReviews() {
+  const [idx, setIdx] = useState(0)
+
+  const next = () => setIdx((prev) => (prev + 1) % reviews.length)
+  const prev = () => setIdx((prev) => (prev - 1 + reviews.length) % reviews.length)
+
+  return (
+    <section id="reviews" className="py-12 lg:py-24 bg-[#F7F3E9] overflow-hidden">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8">
+        <Reveal className="text-center max-w-xl mx-auto space-y-2 mb-10">
+          <p className="text-xs sm:text-sm font-semibold tracking-widest text-[#A87950] uppercase">
+            Kata Mereka
+          </p>
+          <h2 className="text-2xl sm:text-4xl font-semibold text-[#124734]" style={serif}>
+            Cerita Hangat Pelanggan
+          </h2>
+        </Reveal>
+
+        {/* Carousel Card Container */}
+        <div className="max-w-2xl mx-auto relative">
+          <div className="rounded-3xl bg-[#FFFDF7] p-6 sm:p-10 border border-[#124734]/10 shadow-sm transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <Stars count={reviews[idx].rating} />
+              <span className="text-xs font-semibold text-[#124734]/50">
+                {idx + 1} / {reviews.length}
+              </span>
+            </div>
+
+            <p className="text-sm sm:text-lg text-[#124734] leading-relaxed italic mb-6" style={serif}>
+              "{reviews[idx].text}"
+            </p>
+
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#124734] text-white flex items-center justify-center font-bold text-sm">
+                {reviews[idx].initial}
+              </div>
+              <div>
+                <h4 className="text-sm sm:text-base font-bold text-[#124734] leading-tight">
+                  {reviews[idx].name}
+                </h4>
+                <p className="text-[11px] sm:text-xs text-[#124734]/65">{reviews[idx].role}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigasi Carousel Arrow & Dots */}
+          <div className="flex items-center justify-between mt-6 px-2">
+            <div className="flex items-center gap-1.5">
+              {reviews.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setIdx(i)}
+                  className={`h-2 rounded-full transition-all ${
+                    idx === i ? 'w-6 bg-[#124734]' : 'w-2 bg-[#124734]/25'
+                  }`}
+                  aria-label={`Slide ${i + 1}`}
+                />
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={prev}
+                className="w-9 h-9 rounded-full bg-white border border-[#124734]/20 flex items-center justify-center text-[#124734] hover:bg-[#124734] hover:text-white active:scale-95 transition-all shadow-xs"
+                aria-label="Ulasan Sebelumnya"
+              >
+                <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+              </button>
+              <button
+                onClick={next}
+                className="w-9 h-9 rounded-full bg-white border border-[#124734]/20 flex items-center justify-center text-[#124734] hover:bg-[#124734] hover:text-white active:scale-95 transition-all shadow-xs"
+                aria-label="Ulasan Selanjutnya"
+              >
+                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ============================================================
+   FOOTER SECTION (FOREST GREEN #124734)
+   ============================================================ */
+function FooterSection() {
+  return (
+    <footer className="bg-[#124734] text-[#FFFDF7] pt-12 pb-8 border-t border-[#FFFDF7]/10" style={sans}>
+      <div className="max-w-7xl mx-auto px-5 sm:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-10 border-b border-[#FFFDF7]/15">
+          {/* Brand Info */}
+          <div className="md:col-span-2 space-y-3">
+            <div className="flex items-center gap-2.5">
+              <img
+                src={iconImg}
+                alt="Logo"
+                className="w-9 h-9 rounded-full object-contain bg-white/90 p-0.5"
+              />
+              <span className="text-2xl font-bold tracking-tight text-[#FFFDF7]" style={serif}>
+                Justmine Tea
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-[#FFFDF7]/80 leading-relaxed max-w-sm">
+              Good Tea, Good Mood. Menghadirkan kenikmatan teh daun pilihan dan keharuman melati alami untuk menemanimu setiap hari.
+            </p>
+            <p className="text-xs text-[#D9A55B] font-medium">
+              Buka Setiap Hari: 10.00 - 22.00 WIB
+            </p>
+          </div>
+
+          {/* Quick Links */}
           <div className="space-y-3">
-            <p className="text-sm font-semibold tracking-widest" style={{ color: C.wood }}>Our Gallery</p>
-            <h2 className="text-4xl lg:text-5xl font-medium" style={{ ...serif, color: C.forest }}>Make Every Sip a Moment</h2>
+            <h4 className="text-sm font-semibold tracking-wider uppercase text-[#D9A55B]">
+              Navigasi
+            </h4>
+            <ul className="space-y-2 text-xs sm:text-sm text-[#FFFDF7]/80">
+              <li>
+                <Link to="/menu" className="hover:text-white jt-link">
+                  Katalog Menu
+                </Link>
+              </li>
+              <li>
+                <button onClick={() => scrollToId('bestseller')} className="hover:text-white jt-link">
+                  Best Seller
+                </button>
+              </li>
+              <li>
+                <button onClick={() => scrollToId('promo')} className="hover:text-white jt-link">
+                  Promo Spesial
+                </button>
+              </li>
+              <li>
+                <button onClick={() => scrollToId('story')} className="hover:text-white jt-link">
+                  Tentang Kami
+                </button>
+              </li>
+              <li>
+                <button onClick={() => scrollToId('reviews')} className="hover:text-white jt-link">
+                  Ulasan Pelanggan
+                </button>
+              </li>
+            </ul>
           </div>
-        </Reveal>
-        <div className="grid grid-cols-2 lg:grid-cols-4 auto-rows-[180px] lg:auto-rows-[230px] gap-3 lg:gap-4">
-          {IMAGES.gallery.map((src, i) => (
-            <Reveal key={i} delay={i * 60} className={`group overflow-hidden rounded-2xl lg:rounded-3xl ${galleryShape[i]}`}>
-              <Photo src={src} alt={galleryAlt[i]} hint={`public/images/gallery-${i + 1}.jpg`} imgClass="transition-transform duration-700 group-hover:scale-110" />
-            </Reveal>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
 
-/* ---------- footer ---------- */
-function Footer() {
-  const [email, setEmail] = useState('')
-  const [done, setDone] = useState(false)
-  const submit = (e) => { e.preventDefault(); if (email.includes('@')) { setDone(true); setEmail('') } } // TODO: simpan ke Firestore
-  const socials = [['Instagram', 'photo_camera'], ['TikTok', 'music_note'], ['YouTube', 'play_arrow']]
-  return (
-    <footer style={{ background: C.dark, color: C.cream }}>
-      <div className="max-w-7xl mx-auto px-5 lg:px-8 pt-16 pb-8 grid gap-10 md:grid-cols-2 lg:grid-cols-4">
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="" className="w-12 h-12 rounded-full object-cover bg-white" onError={(e) => (e.currentTarget.style.display = 'none')} />
-            <span className="text-2xl font-semibold" style={serif}>Justmine Tea</span>
+          {/* Kontak & Social Media */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold tracking-wider uppercase text-[#D9A55B]">
+              Hubungi Kami
+            </h4>
+            <ul className="space-y-2 text-xs sm:text-sm text-[#FFFDF7]/80">
+              <li>
+                <a
+                  href="https://wa.me/6281234567890"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 hover:text-[#D9A55B] transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[16px]">chat</span>
+                  WhatsApp Official
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://instagram.com/justminetea"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 hover:text-[#D9A55B] transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[16px]">photo_camera</span>
+                  @justminetea
+                </a>
+              </li>
+              <li>
+                <Link to="/kasir" className="flex items-center gap-2 hover:text-[#D9A55B] transition-colors">
+                  <span className="material-symbols-outlined text-[16px]">point_of_sale</span>
+                  Tampilan Kasir (Demo)
+                </Link>
+              </li>
+            </ul>
           </div>
-          <p className="text-sm leading-relaxed opacity-80 max-w-xs">Good Tea, Good Mood. Teh murni dengan rasa seimbang, untuk menemani harimu.</p>
         </div>
-        <div>
-          <h4 className="font-semibold mb-4" style={serif}>Quick Links</h4>
-          <ul className="space-y-2 text-sm opacity-80">
-            {navItems.map(([l, id]) => <li key={id}><button onClick={() => scrollToId(id)} className="jt-link">{l}</button></li>)}
-          </ul>
-        </div>
-        <div className="space-y-4">
-          <h4 className="font-semibold" style={serif}>Contact & Follow</h4>
-          <p className="text-sm opacity-80">hello@justmine.tea<br />[Nomor telepon]</p>
-          <div className="flex gap-3">
-            {socials.map(([n, icon]) => (
-              <a key={n} href="#" aria-label={n} className="w-10 h-10 rounded-full border flex items-center justify-center transition-colors hover:bg-[#F7F3E9] hover:text-[#092D20]" style={{ borderColor: `${C.cream}55` }}>
-                <span className="material-symbols-outlined text-[20px]">{icon}</span>
-              </a>
-            ))}
+
+        {/* Copyright */}
+        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#FFFDF7]/60">
+          <p>&copy; {new Date().getFullYear()} Justmine Tea. All rights reserved.</p>
+          <div className="flex gap-4">
+            <Link to="/menu" className="hover:text-white">
+              Menu
+            </Link>
+            <Link to="/cart" className="hover:text-white">
+              Keranjang
+            </Link>
+            <Link to="/history" className="hover:text-white">
+              Riwayat
+            </Link>
           </div>
-        </div>
-        <form onSubmit={submit} className="space-y-3">
-          <h4 className="font-semibold" style={serif}>Stay in touch</h4>
-          <div className="flex gap-2">
-            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email kamu" aria-label="Email" className="flex-1 min-w-0 rounded-full px-4 py-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#8A9B79]" style={{ background: `${C.cream}15`, color: C.cream }} />
-            <button type="submit" className="rounded-full px-4 text-sm font-semibold transition-colors hover:bg-white" style={{ background: C.cream, color: C.dark }}>Subscribe</button>
-          </div>
-          {done && <p className="text-xs" style={{ color: C.sage }}>Terima kasih, kamu sudah terdaftar.</p>}
-        </form>
-      </div>
-      <div className="max-w-7xl mx-auto px-5 lg:px-8 py-6 border-t flex flex-wrap items-center justify-between gap-3 text-xs opacity-80" style={{ borderColor: `${C.cream}22` }}>
-        <p>© {new Date().getFullYear()} Justmine Tea. All rights reserved.</p>
-        <div className="flex items-center gap-5">
-          <a href="#" className="jt-link">Privacy Policy</a>
-          <a href="#" className="jt-link">Terms of Service</a>
-          <Link to="/kasir" className="jt-link">Tampilan kasir (Demo)</Link>
         </div>
       </div>
     </footer>
   )
 }
 
-/* ---------- page ---------- */
-export default function Home() {
+/* ============================================================
+   CENTER ZOOM MODAL DETAIL MENU
+   ============================================================ */
+function ProductDetailModal({ item, onClose, onAddToCart }) {
+  if (!item) return null
+
   return (
-    <div className="min-h-screen overflow-x-hidden relative" style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: C.cream }}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs jt-fade"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={item.name}
+    >
+      <div
+        className="relative w-full max-w-lg rounded-3xl overflow-hidden bg-[#FFFDF7] shadow-2xl jt-modal-center flex flex-col sm:flex-row"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Foto Produk */}
+        <div className="relative h-56 sm:h-auto sm:w-1/2 bg-[#F7F3E9] flex items-center justify-center p-4">
+          <ProductPhoto p={item} />
+          {item.isBestSeller && (
+            <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-[#124734] text-white text-xs font-semibold">
+              Best Seller
+            </span>
+          )}
+        </div>
+
+        {/* Konten Produk */}
+        <div className="p-6 sm:w-1/2 flex flex-col justify-between text-left">
+          <div className="space-y-2">
+            <span className="text-[11px] font-semibold tracking-wider text-[#A87950] uppercase">
+              {item.cat}
+            </span>
+            <h3 className="text-xl sm:text-2xl font-bold text-[#124734]" style={serif}>
+              {item.name}
+            </h3>
+            <p className="text-xs sm:text-sm text-[#124734]/80 leading-relaxed">{item.desc}</p>
+            <p className="text-lg sm:text-xl font-bold text-[#124734] pt-2">{rupiah(item.price)}</p>
+          </div>
+
+          <div className="pt-6 space-y-2">
+            <button
+              type="button"
+              onClick={() => {
+                onAddToCart(item)
+                onClose()
+              }}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-[#124734] text-white text-sm font-semibold shadow-md hover:bg-[#092D20] active:scale-95 transition-all"
+            >
+              <span className="material-symbols-outlined text-[18px]">shopping_bag</span>
+              <span>Tambah ke Keranjang</span>
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full py-2 text-xs font-semibold text-[#124734]/70 hover:text-[#124734]"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+
+        {/* Tombol Tutup Silang di Kanan Atas */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 border border-[#124734]/15 flex items-center justify-center text-[#124734] hover:bg-white active:scale-90 transition-all shadow-xs"
+          aria-label="Tutup popup"
+        >
+          <span className="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/* ============================================================
+   PAGE UTAMA HOME / LANDING PAGE JUSTMINE TEA
+   ============================================================ */
+export default function Home() {
+  const { addItem } = useCart()
+  const { open: openCart } = useCartSheet()
+  const [selectedProduct, setSelectedProduct] = useState(null)
+  const [toastMessage, setToastMessage] = useState(null)
+
+  function handleAddToCart(item) {
+    addItem({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      qty: 1,
+      imageUrl: item.imageUrl,
+    })
+    setToastMessage(`${item.name} ditambahkan ke keranjang!`)
+    setTimeout(() => {
+      setToastMessage(null)
+    }, 2800)
+  }
+
+  return (
+    <div
+      className="min-h-screen overflow-x-hidden relative bg-[#F7F3E9] text-[#124734]"
+      style={sans}
+    >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&display=swap');
+        
         html { scroll-behavior: smooth; }
-        .jt-reveal { opacity: 0; transform: translateY(24px); transition: opacity .8s ease, transform .8s ease; }
-        .jt-reveal.jt-in { opacity: 1; transform: none; }
-        .jt-link { position: relative; }
-        .jt-link::after { content: ''; position: absolute; left: 0; bottom: -4px; height: 2px; width: 100%; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform .3s ease; }
-        .jt-link:hover::after { transform: scaleX(1); }
-        .jt-fade { animation: jtFade .25s ease; }
-        .jt-pop { animation: jtPop .3s ease; }
-        @keyframes jtFade { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes jtPop { from { opacity: 0; transform: scale(.96) } to { opacity: 1; transform: none } }
+        
+        .jt-reveal {
+          opacity: 0;
+          transform: translateY(20px);
+          transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .jt-reveal.jt-in {
+          opacity: 1;
+          transform: none;
+        }
+
+        .jt-link {
+          position: relative;
+        }
+        .jt-link::after {
+          content: '';
+          position: absolute;
+          left: 0;
+          bottom: -3px;
+          height: 1.5px;
+          width: 100%;
+          background: currentColor;
+          transform: scaleX(0);
+          transform-origin: left;
+          transition: transform 0.25s ease;
+        }
+        .jt-link:hover::after {
+          transform: scaleX(1);
+        }
+
+        .jt-fade {
+          animation: jtFade 0.25s ease;
+        }
+        @keyframes jtFade {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        .jt-drawer {
+          animation: jtDrawerSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes jtDrawerSlide {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+
+        .jt-modal-center {
+          animation: modalCenterPop 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
         @keyframes modalCenterPop {
           0% {
             opacity: 0;
-            transform: scale(0.8) translateY(24px);
+            transform: scale(0.85) translateY(18px);
           }
           100% {
             opacity: 1;
             transform: scale(1) translateY(0);
           }
         }
-        .jt-modal-center {
-          animation: modalCenterPop 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+        @media (prefers-reduced-motion: reduce) {
+          html { scroll-behavior: auto; }
+          .jt-reveal { opacity: 1; transform: none; transition: none; }
+          * { animation: none !important; }
         }
-        @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .jt-reveal { opacity: 1; transform: none; transition: none; } * { animation: none !important; } }
       `}</style>
-      {/* Header transparan persis seperti halaman lain */}
-      <div className="absolute top-0 left-0 right-0 z-50 pointer-events-auto">
-        <MobileHeader subtitle="Home" transparent />
-        <DesktopNav transparent />
-      </div>
+
+      {/* Floating Micro Toast saat add to cart */}
+      {toastMessage && (
+        <aside
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:w-auto z-50 bg-[#124734] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center justify-between gap-4 jt-fade border border-[#FFFDF7]/20"
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="material-symbols-outlined text-[20px] text-[#A9B99A]">check_circle</span>
+            <span className="text-xs sm:text-sm font-medium">{toastMessage}</span>
+          </div>
+          <button
+            onClick={openCart}
+            className="text-xs font-bold text-[#D9A55B] hover:underline shrink-0"
+          >
+            Buka Keranjang
+          </button>
+        </aside>
+      )}
+
+      {/* Navbar Universal (Mobile & Desktop) */}
+      <NavigationBar />
+
+      {/* Main Content Sections */}
       <main>
-        <Hero />
-        <Story />
-        <Menu />
-        <Why />
-        <Promo />
-        <Gallery />
+        {/* Hero Section */}
+        <HeroSection />
+
+        {/* Keunggulan Brand */}
+        <BrandBenefits />
+
+        {/* Best Seller */}
+        <BestSellerSection
+          onSelectProduct={(p) => setSelectedProduct(p)}
+          onAddToCart={handleAddToCart}
+        />
+
+        {/* Our Menu */}
+        <OurMenuSection
+          onSelectProduct={(p) => setSelectedProduct(p)}
+          onAddToCart={handleAddToCart}
+        />
+
+        {/* Promo Banner */}
+        <PromoBanner />
+
+        {/* About Justmine Tea */}
+        <AboutStory />
+
+        {/* Customer Reviews */}
+        <CustomerReviews />
       </main>
-      <Footer />
+
+      {/* Footer */}
+      <FooterSection />
+
+      {/* Modal Popup Detail Produk (Zoom ke Tengah Layar) */}
+      {selectedProduct && (
+        <ProductDetailModal
+          item={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+          onAddToCart={handleAddToCart}
+        />
+      )}
     </div>
   )
 }

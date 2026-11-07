@@ -1,13 +1,9 @@
 import NotificationBell from './NotificationBell.jsx'
 import TableBadge from './TableBadge.jsx'
 
-export default function MobileHeader({ subtitle = 'Home', transparent = false }) {
+export default function MobileHeader({ subtitle = 'Home' }) {
     return (
-        <header className={`lg:hidden sticky top-0 z-40 transition-colors duration-300 ${
-            transparent
-                ? 'bg-transparent border-b border-transparent'
-                : 'bg-surface-container-lowest/95 backdrop-blur-xl shadow-[0_1px_8px_rgba(42,49,39,0.06)]'
-        }`}>
+        <header className="lg:hidden sticky top-0 z-40 bg-surface-container-lowest/95 backdrop-blur-xl shadow-[0_1px_8px_rgba(42,49,39,0.06)]">
             <div className="h-16 px-4 flex items-center justify-between">
                 <div className="flex items-center gap-2 min-w-0">
                     <img

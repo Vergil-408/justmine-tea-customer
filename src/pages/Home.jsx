@@ -338,7 +338,7 @@ function HeroSection() {
       {/* Mobile: foto portrait full-width */}
       <div className="lg:hidden relative w-full h-[470px] sm:h-[530px] overflow-hidden shrink-0">
         <img src={chaImg} alt="Gadis minum Justmine Tea sambil membaca buku"
-          className="w-full h-full object-cover object-top" />
+          className="w-full h-full object-cover object-right-top" />
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true"
           style={{ background: 'linear-gradient(180deg, rgba(247,243,233,0) 0%, rgba(247,243,233,0) 45%, rgba(247,243,233,0.6) 72%, #F7F3E9 100%)' }} />
       </div>

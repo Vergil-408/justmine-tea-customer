@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import chaImg from '../assets/cha.png'
 import iconImg from '../assets/icon.png'
+import { useTable } from '../context/TableContext.jsx'
+import TableBadge from '../components/TableBadge.jsx'
 
 /* ============================================================
    PALET WARNA & IDENTITAS BRAND JUSTMINE TEA
@@ -179,6 +181,7 @@ function ProductPhoto({ p, className = '' }) {
    NAVBAR — tanpa cart, hanya navigasi landing page
    ============================================================ */
 function NavigationBar() {
+  const { openScanner } = useTable()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [scrolled, setScrolled]     = useState(false)
 
@@ -220,13 +223,16 @@ function NavigationBar() {
             </button>
           </nav>
 
-          <Link
-            to="/menu"
-            className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold bg-[#124734] text-[#FFFDF7] shadow-sm hover:bg-[#092D20] hover:shadow-md transition-all active:scale-95"
-          >
-            <span className="material-symbols-outlined text-[18px]">restaurant_menu</span>
-            Lihat Menu
-          </Link>
+          <div className="flex items-center gap-3">
+            <TableBadge />
+            <Link
+              to="/menu"
+              className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold bg-[#124734] text-[#FFFDF7] shadow-sm hover:bg-[#092D20] hover:shadow-md transition-all active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[18px]">restaurant_menu</span>
+              Lihat Menu
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -243,14 +249,17 @@ function NavigationBar() {
             </span>
           </Link>
 
-          {/* Hamburger */}
-          <button
-            onClick={() => setDrawerOpen(true)}
-            className="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md shadow-md border border-stone-200/60 flex items-center justify-center text-[#124734] active:scale-90 transition-transform"
-            aria-label="Buka navigasi"
-          >
-            <span className="material-symbols-outlined text-[22px]">menu</span>
-          </button>
+          {/* Table Badge + Hamburger */}
+          <div className="flex items-center gap-2">
+            <TableBadge />
+            <button
+              onClick={() => setDrawerOpen(true)}
+              className="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md shadow-md border border-stone-200/60 flex items-center justify-center text-[#124734] active:scale-90 transition-transform"
+              aria-label="Buka navigasi"
+            >
+              <span className="material-symbols-outlined text-[22px]">menu</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -283,6 +292,7 @@ function NavigationBar() {
 
               <nav className="mt-6 flex flex-col gap-1 text-base font-medium text-[#124734]">
                 {[
+                  { label: 'Scan / Pilih Meja', action: () => { setDrawerOpen(false); openScanner() } },
                   { label: 'Katalog Menu', action: () => { setDrawerOpen(false); window.location.href = '/menu' } },
                   { label: 'Koleksi Teh', action: () => { setDrawerOpen(false); scrollToId('menu') } },
                   { label: 'Tentang Kami', action: () => { setDrawerOpen(false); scrollToId('story') } },

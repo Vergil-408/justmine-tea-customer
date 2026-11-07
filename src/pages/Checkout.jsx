@@ -49,7 +49,7 @@ const cardCls = 'bg-surface-container-lowest border border-outline-variant/50 sh
 export default function Checkout() {
   const { items, subtotal, clearCart } = useCart()
   const { user, profile, loading: authLoading } = useAuth()
-  const { table } = useTable()
+  const { table, openScanner } = useTable()
   const navigate = useNavigate()
 
   const [customerName, setCustomerName] = useState(() => user?.displayName || profile?.displayName || '')
@@ -301,22 +301,41 @@ export default function Checkout() {
         <section className={cardCls} aria-label="Nomor meja dan nama pemesan">
           <div className="space-y-3">
             {table ? (
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-primary-container">table_restaurant</span>
-                <div>
-                  <p className="text-xs text-on-surface-variant">Pesanan diantar ke</p>
-                  <p className="font-bold">Meja {table}</p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-primary-container">table_restaurant</span>
+                  <div>
+                    <p className="text-xs text-on-surface-variant">Pesanan diantar ke</p>
+                    <p className="font-bold">Meja {table}</p>
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={openScanner}
+                  className="text-xs font-bold text-primary hover:underline px-2.5 py-1 rounded-lg border border-primary/20 bg-primary/5 active:scale-95 transition-all"
+                >
+                  Ubah Meja
+                </button>
               </div>
             ) : (
-              <div className="flex items-start gap-3">
-                <span className="material-symbols-outlined text-error">qr_code_scanner</span>
-                <div>
-                  <p className="font-bold text-sm">Scan QR di mejamu dulu</p>
-                  <p className="text-xs text-on-surface-variant mt-0.5">
-                    Nomor meja diperlukan supaya pesanan bisa diantar. Scan QR yang ada di mejamu, lalu kembali ke halaman ini.
-                  </p>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <span className="material-symbols-outlined text-error mt-0.5">qr_code_scanner</span>
+                  <div>
+                    <p className="font-bold text-sm">Nomor meja belum terisi</p>
+                    <p className="text-xs text-on-surface-variant mt-0.5">
+                      Diperlukan agar pesanan bisa diantar langsung ke mejamu.
+                    </p>
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={openScanner}
+                  className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-white text-xs font-bold shadow-xs hover:bg-primary-dark active:scale-95 transition-transform"
+                >
+                  <span className="material-symbols-outlined text-[16px]">qr_code_scanner</span>
+                  <span>Scan Meja</span>
+                </button>
               </div>
             )}
 
@@ -413,15 +432,20 @@ export default function Checkout() {
         <div className="max-w-xl mx-auto px-4 pt-3 pb-5">
           <button
             type="button"
-            onClick={handlePay}
-            disabled={!canPay}
-            className="w-full bg-primary hover:bg-primary-container text-white disabled:bg-surface-container-high disabled:text-outline py-3.5 rounded-full text-sm font-semibold"
+            onClick={!table ? openScanner : handlePay}
+            disabled={table && (!canPay || submitting)}
+            className="w-full bg-primary hover:bg-primary-container text-white disabled:bg-surface-container-high disabled:text-outline py-3.5 rounded-full text-sm font-semibold active:scale-[0.99] transition-all flex items-center justify-center gap-2"
           >
-            {submitting
-              ? 'Memproses…'
-              : !table
-                ? 'Scan QR meja dulu'
-                : `Bayar dengan QRIS · ${rupiah(subtotal)}`}
+            {submitting ? (
+              'Memproses…'
+            ) : !table ? (
+              <>
+                <span className="material-symbols-outlined text-[18px]">qr_code_scanner</span>
+                <span>Pilih / Scan QR Meja Dulu</span>
+              </>
+            ) : (
+              `Bayar dengan QRIS · ${rupiah(subtotal)}`
+            )}
           </button>
         </div>
       </div>

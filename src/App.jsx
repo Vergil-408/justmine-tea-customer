@@ -11,6 +11,7 @@ import Profile from './pages/Profile.jsx'
 import Login from './pages/auth/Login.jsx'
 import { NotificationProvider } from './context/NotificationContext.jsx'
 import { TableProvider } from './context/TableContext.jsx'
+import TableScannerModal from './components/TableScannerModal.jsx'
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="/history" element={<History />} />
         <Route path="/profile" element={<Profile />} />
       </Routes>
+      <TableScannerModal />
     </NotificationProvider>
     </TableProvider>
   )

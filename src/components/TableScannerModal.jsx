@@ -5,6 +5,41 @@ import { parseTableFromInput } from '../utils/table.js'
 
 const QUICK_TABLES = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '12', '15']
 
+/**
+ * Memisahkan dan memprioritaskan kamera fisik laptop/HP di atas kamera virtual
+ * seperti "Microsoft Link to Windows" / "Phone Link" / "OBS Virtual Camera".
+ */
+function sortAndFilterDevices(devices) {
+  if (!devices || devices.length === 0) return []
+
+  const physical = []
+  const virtual = []
+
+  for (const d of devices) {
+    const label = (d.label || '').toLowerCase()
+    // Deteksi kamera virtual Windows yang sering membajak webcam
+    if (/link to windows|phone link|virtual|obs|droidcam/i.test(label)) {
+      virtual.push(d)
+    } else {
+      physical.push(d)
+    }
+  }
+
+  // Jika di HP, prioritaskan kamera belakang (back/rear)
+  physical.sort((a, b) => {
+    const aLabel = (a.label || '').toLowerCase()
+    const bLabel = (b.label || '').toLowerCase()
+    const aBack = /back|rear|environment|belakang/i.test(aLabel)
+    const bBack = /back|rear|environment|belakang/i.test(bLabel)
+    if (aBack && !bBack) return -1
+    if (!aBack && bBack) return 1
+    return 0
+  })
+
+  // Kamera fisik laptop/HP selalu didahulukan, Link to Windows ditaruh paling belakang
+  return [...physical, ...virtual]
+}
+
 export default function TableScannerModal() {
   const { table, setTableNumber, clearTable, isScannerOpen, closeScanner } = useTable()
 
@@ -15,10 +50,11 @@ export default function TableScannerModal() {
   const [cameraPermissionError, setCameraPermissionError] = useState(false)
   const [isInitializingCamera, setIsInitializingCamera] = useState(false)
   const [availableCameras, setAvailableCameras] = useState([])
-  const [selectedCameraIndex, setSelectedCameraIndex] = useState(0)
+  const [selectedDeviceId, setSelectedDeviceId] = useState('')
 
   const scannerRef = useRef(null)
   const isStoppingRef = useRef(false)
+  const fileInputRef = useRef(null)
 
   // Reset state saat modal dibuka
   useEffect(() => {
@@ -30,7 +66,7 @@ export default function TableScannerModal() {
     }
   }, [isScannerOpen, table])
 
-  // Lifecycle scanner kamera (Mendukung Kamera HP & Webcam Laptop/PC)
+  // Lifecycle scanner kamera (Mencegah Link to Windows membajak webcam laptop)
   useEffect(() => {
     if (!isScannerOpen || activeTab !== 'camera' || successTable) {
       stopScanner()
@@ -54,34 +90,33 @@ export default function TableScannerModal() {
         const html5Qr = new Html5Qrcode(qrElementId)
         scannerRef.current = html5Qr
 
-        // 1. Coba deteksi daftar kamera yang tersedia di perangkat (HP atau Laptop)
-        let devices = []
+        // 1. Dapatkan daftar kamera dan sortir agar kamera fisik laptop diutamakan
+        let sortedDevices = []
         try {
-          devices = await Html5Qrcode.getCameras()
-          if (isMounted && devices && devices.length > 0) {
-            setAvailableCameras(devices)
+          const rawDevices = await Html5Qrcode.getCameras()
+          if (rawDevices && rawDevices.length > 0) {
+            sortedDevices = sortAndFilterDevices(rawDevices)
+            if (isMounted) {
+              setAvailableCameras(sortedDevices)
+            }
           }
         } catch (e) {
-          console.warn('Tidak dapat membaca daftar kamera via getCameras:', e)
+          console.warn('Gagal membaca getCameras:', e)
         }
 
-        // 2. Tentukan kamera yang akan digunakan
-        let cameraConfig = null
-
-        if (devices && devices.length > 0) {
-          // Jika user memilih kamera tertentu via tombol switch
-          if (selectedCameraIndex < devices.length) {
-            cameraConfig = devices[selectedCameraIndex].id
-          } else {
-            // Prioritaskan kamera belakang jika di smartphone
-            const backCam = devices.find((d) =>
-              /back|rear|environment|belakang/i.test(d.label || '')
-            )
-            cameraConfig = backCam ? backCam.id : devices[0].id
+        // 2. Tentukan device kamera target
+        let targetCamera = null
+        if (selectedDeviceId) {
+          targetCamera = selectedDeviceId
+        } else if (sortedDevices.length > 0) {
+          // Pilih kamera fisik laptop/HP pertama (bukan Link to Windows)
+          targetCamera = sortedDevices[0].id
+          if (isMounted) {
+            setSelectedDeviceId(sortedDevices[0].id)
           }
         } else {
-          // Fallback ke facingMode environment
-          cameraConfig = { facingMode: 'environment' }
+          // Fallback generik
+          targetCamera = { facingMode: 'user' }
         }
 
         const scanConfig = {
@@ -90,19 +125,18 @@ export default function TableScannerModal() {
           aspectRatio: 1.0,
         }
 
-        // 3. Jalankan pemindaian kamera
+        // 3. Mulai pemindaian dengan device yang dipilih secara spesifik
         try {
           await html5Qr.start(
-            cameraConfig,
+            targetCamera,
             scanConfig,
             (decodedText) => {
               handleScanSuccess(decodedText)
             },
             () => {}
           )
-        } catch (initialErr) {
-          console.warn('Gagal dengan kamera primer, mencoba fallback webcam laptop/user:', initialErr)
-          // Fallback penting untuk Laptop / Webcam yang tidak memiliki facingMode environment:
+        } catch (camErr) {
+          console.warn('Gagal start dengan target kamera, mencoba user facing:', camErr)
           await html5Qr.start(
             { facingMode: 'user' },
             scanConfig,
@@ -117,12 +151,12 @@ export default function TableScannerModal() {
           setIsInitializingCamera(false)
         }
       } catch (err) {
-        console.warn('Gagal total mengakses kamera:', err)
+        console.warn('Gagal mengakses webcam/kamera:', err)
         if (isMounted) {
           setIsInitializingCamera(false)
           setCameraPermissionError(true)
           setErrorMsg(
-            'Kamera/webcam tidak dapat diakses atau izin belum diberikan di browser. Silakan izinkan akses kamera atau gunakan input manual.'
+            'Webcam atau kamera tidak dapat diakses. Silakan periksa izin browser atau gunakan opsi Upload Foto / Ketik Manual.'
           )
         }
       }
@@ -133,7 +167,7 @@ export default function TableScannerModal() {
       clearTimeout(timer)
       stopScanner()
     }
-  }, [isScannerOpen, activeTab, successTable, selectedCameraIndex])
+  }, [isScannerOpen, activeTab, successTable, selectedDeviceId])
 
   function stopScanner() {
     if (isStoppingRef.current) return
@@ -158,10 +192,10 @@ export default function TableScannerModal() {
     }
   }
 
-  function handleSwitchCamera() {
-    if (availableCameras.length <= 1) return
+  function handleSelectDevice(deviceId) {
+    if (deviceId === selectedDeviceId) return
     stopScanner()
-    setSelectedCameraIndex((prev) => (prev + 1) % availableCameras.length)
+    setSelectedDeviceId(deviceId)
   }
 
   function handleScanSuccess(rawResult) {
@@ -178,6 +212,39 @@ export default function TableScannerModal() {
       }, 1400)
     } else {
       setErrorMsg(`QR tidak dikenali sebagai meja Justmine Tea (${rawResult.slice(0, 25)}...)`)
+    }
+  }
+
+  // Scan QR dari file gambar / foto / screenshot
+  async function handleFileUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setErrorMsg('')
+    try {
+      const qrElementId = 'justmine-table-qr-reader'
+      let html5Qr = scannerRef.current
+
+      // Jika belum ada instance scanner, buat instance sementara
+      if (!html5Qr) {
+        html5Qr = new Html5Qrcode(qrElementId)
+      }
+
+      // Hentikan live scan sebelum memproses file
+      if (html5Qr.isScanning) {
+        await html5Qr.stop()
+      }
+
+      const decodedText = await html5Qr.scanFile(file, true)
+      handleScanSuccess(decodedText)
+    } catch (err) {
+      console.warn('Gagal membaca QR dari file:', err)
+      setErrorMsg('Tidak dapat menemukan QR Code pada foto ini. Pastikan foto QR terlihat jelas dan terang.')
+    } finally {
+      // Reset file input agar bisa upload file yang sama jika diinginkan
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     }
   }
 
@@ -257,7 +324,7 @@ export default function TableScannerModal() {
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">qr_code_scanner</span>
-            Kamera / Webcam
+            Webcam / Kamera
           </button>
           <button
             type="button"
@@ -292,22 +359,34 @@ export default function TableScannerModal() {
             {/* TAB 1: SCAN KAMERA / WEBCAM */}
             {activeTab === 'camera' && (
               <div className="space-y-3">
+                {/* Dropdown Pemilihan Kamera jika lebih dari 1 */}
+                {availableCameras.length > 1 && (
+                  <div className="flex items-center gap-2 px-2.5 py-1.5 bg-stone-100 rounded-xl border border-stone-200">
+                    <span className="material-symbols-outlined text-[17px] text-[#124734]">
+                      videocam
+                    </span>
+                    <select
+                      value={selectedDeviceId}
+                      onChange={(e) => handleSelectDevice(e.target.value)}
+                      className="flex-1 bg-transparent text-xs font-semibold text-stone-800 outline-none truncate"
+                      aria-label="Pilih kamera"
+                    >
+                      {availableCameras.map((cam, idx) => {
+                        const isLinkToWin = /link to windows|phone link/i.test(cam.label)
+                        return (
+                          <option key={cam.id || idx} value={cam.id}>
+                            {cam.label || `Kamera ${idx + 1}`}
+                            {isLinkToWin ? ' (HP via Windows)' : ' (Webcam Laptop)'}
+                          </option>
+                        )
+                      })}
+                    </select>
+                  </div>
+                )}
+
                 <div className="relative rounded-2xl overflow-hidden bg-black aspect-square flex items-center justify-center border border-stone-300">
                   {/* Container video HTML5 QR Code */}
                   <div id="justmine-table-qr-reader" className="w-full h-full" />
-
-                  {/* Tombol Ganti Kamera jika ada lebih dari 1 kamera/webcam */}
-                  {availableCameras.length > 1 && !isInitializingCamera && !cameraPermissionError && (
-                    <button
-                      type="button"
-                      onClick={handleSwitchCamera}
-                      className="absolute top-3 right-3 px-2.5 py-1.5 rounded-full bg-black/60 text-white text-[11px] font-semibold flex items-center gap-1 backdrop-blur-xs hover:bg-black/80 active:scale-95 transition-all shadow-md z-10"
-                      title="Ganti kamera / webcam"
-                    >
-                      <span className="material-symbols-outlined text-[15px]">cameraswitch</span>
-                      <span>Ganti</span>
-                    </button>
-                  )}
 
                   {/* Loading saat buka kamera */}
                   {isInitializingCamera && (
@@ -315,7 +394,7 @@ export default function TableScannerModal() {
                       <span className="material-symbols-outlined text-[28px] animate-spin">
                         progress_activity
                       </span>
-                      <span>Membuka kamera / webcam...</span>
+                      <span>Membuka webcam laptop...</span>
                     </div>
                   )}
 
@@ -333,22 +412,36 @@ export default function TableScannerModal() {
                         videocam_off
                       </span>
                       <p className="text-xs leading-relaxed text-stone-300">
-                        Kamera atau webcam tidak dapat diakses. Pastikan izin kamera sudah diberikan di browser.
+                        Webcam laptop tidak dapat diakses atau diblokir browser.
                       </p>
                       <button
                         type="button"
                         onClick={() => setActiveTab('manual')}
                         className="mt-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-full active:scale-95 transition-transform"
                       >
-                        Pilih Nomor Meja Manual
+                        Ketik Nomor Meja Saja
                       </button>
                     </div>
                   )}
                 </div>
 
-                <p className="text-center text-xs text-stone-500 leading-relaxed">
-                  Arahkan QR Code meja ke webcam laptop atau kamera HP-mu.
-                </p>
+                {/* Alternatif: Scan dari File Foto / Gambar QR */}
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <p className="text-[11px] text-stone-500">
+                    Arahkan QR ke webcam laptop
+                  </p>
+                  <label className="cursor-pointer inline-flex items-center gap-1 text-[11px] font-bold text-[#124734] bg-stone-100 hover:bg-stone-200 px-2.5 py-1 rounded-lg border border-stone-200 transition-colors">
+                    <span className="material-symbols-outlined text-[14px]">upload_file</span>
+                    <span>Upload Foto QR</span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                    />
+                  </label>
+                </div>
               </div>
             )}
 

@@ -1,5 +1,6 @@
 // Pemanggil endpoint server (folder api/ di Vercel).
 // Browser sengaja TIDAK mengirim harga: server menghitung ulang dari id menu + id pilihan.
+import { auth } from './firebase.js'
 
 async function postJson(path, payload, headers = {}) {
   const res = await fetch(path, {
@@ -22,7 +23,23 @@ async function postJson(path, payload, headers = {}) {
  */
 export async function requestCreateOrder({ items, tableNumber, paymentMethod, clientRequestId, user, customerName }) {
   const headers = {}
-  if (user) headers.Authorization = `Bearer ${await user.getIdToken()}`
+
+  // Ambil Firebase IdToken secara aman tanpa risiko crash jika user bukan instance lengkap
+  try {
+    const targetUser = (user && typeof user.getIdToken === 'function')
+      ? user
+      : (auth?.currentUser && typeof auth.currentUser.getIdToken === 'function')
+        ? auth.currentUser
+        : null
+
+    if (targetUser) {
+      const token = await targetUser.getIdToken()
+      if (token) headers.Authorization = `Bearer ${token}`
+    }
+  } catch (tokenErr) {
+    console.warn('Gagal memperoleh token auth:', tokenErr)
+  }
+
   return postJson(
     '/api/create-order',
     {

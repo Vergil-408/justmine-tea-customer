@@ -115,7 +115,14 @@ export function AuthProvider({ children }) {
         }
 
         setProfile((prev) => ({ ...prev, ...updates }))
-        setUser((prev) => (prev ? { ...prev, ...authUpdates, photoURL: photoURL !== undefined ? photoURL : prev.photoURL } : prev))
+        if (auth.currentUser) {
+            // Gunakan Object.assign pada object dengan prototype asli agar method seperti getIdToken tidak hilang
+            const updatedUser = Object.assign(Object.create(Object.getPrototypeOf(auth.currentUser)), auth.currentUser, authUpdates)
+            if (photoURL !== undefined) updatedUser.photoURL = photoURL
+            setUser(updatedUser)
+        } else {
+            setUser((prev) => (prev ? { ...prev, ...authUpdates, photoURL: photoURL !== undefined ? photoURL : prev.photoURL } : prev))
+        }
     }
 
     async function logout() {

@@ -32,55 +32,73 @@ const products = [
     id: 'jasmine-milk-tea',
     cat: 'Milk Tea',
     name: 'Jasmine Milk Tea',
-    desc: 'Creamy milk tea dengan keharuman bunga melati alami yang menenangkan.',
+    desc: 'Seduhan daun teh melati pilihan berpadu harmonis dengan susu segar bertekstur sutra dan keharuman floral alami yang menenangkan.',
     price: 24000,
     color: '#E9D9C2',
-    imageUrl: '/images/menu/jasmine-milk-tea.png',
-  },
-  {
-    id: 'classic-green-tea',
-    cat: 'Pure Tea',
-    name: 'Classic Green Tea',
-    desc: 'Seduhan teh hijau murni pegunungan, kaya antioksidan dan menyegarkan.',
-    price: 20000,
-    color: '#B9C79F',
-    imageUrl: '/images/menu/classic-green-tea.png',
-  },
-  {
-    id: 'brown-sugar-milk-tea',
-    cat: 'Milk Tea',
-    name: 'Brown Sugar Milk Tea',
-    desc: 'Perpaduan susu segar dengan karamel brown sugar organik yang gurih lembut.',
-    price: 26000,
-    color: '#A87950',
-    imageUrl: '/images/menu/brown-sugar-milk-tea.png',
-  },
-  {
-    id: 'oolong-tea',
-    cat: 'Pure Tea',
-    name: 'Oolong Tea',
-    desc: 'Teh oolong amber artisanal dengan aroma panggang halus dan aftertaste manis.',
-    price: 22000,
-    color: '#D9A55B',
-    imageUrl: '/images/menu/oolong-tea.png',
-  },
-  {
-    id: 'jasmine-oolong',
-    cat: 'Signature',
-    name: 'Jasmine Oolong',
-    desc: 'Harmoni floral melati dan karakter kuat oolong, racikan signature Justmine.',
-    price: 24000,
-    color: '#E3B567',
-    imageUrl: '/images/menu/jasmine-oolong.png',
+    edition: 'Signature Series',
+    provenance: 'Kebun Teh Dataran Tinggi, Jawa Barat',
+    accompaniment: 'Floral Melati & Susu Segar Sutra',
+    imageUrl: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=1200&q=80',
   },
   {
     id: 'matcha-latte',
     cat: 'Signature',
     name: 'Matcha Latte',
-    desc: 'Matcha Uji premium dengan lapisan milk foam lembut bertekstur sutra.',
+    desc: 'Matcha Uji premium pilihan dengan lapisan foam susu lembut bertingkat. Cita rasa earthy pekat berpadu aftertaste umami yang elegan.',
     price: 28000,
     color: '#8A9B79',
-    imageUrl: '/images/menu/matcha-latte.png',
+    edition: 'Chef Selection',
+    provenance: 'Ceremonial Grade Matcha, Uji Kyoto',
+    accompaniment: 'Velvety Milk Foam & Pure Umami',
+    imageUrl: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=1200&q=80',
+  },
+  {
+    id: 'brown-sugar-milk-tea',
+    cat: 'Milk Tea',
+    name: 'Brown Sugar Milk Tea',
+    desc: 'Karamel gula aren organik yang dimasak perlahan hingga legit sempurna, dipadukan susu dingin segar dan aroma harum teh hitam.',
+    price: 26000,
+    color: '#A87950',
+    edition: 'Favorit Pelanggan',
+    provenance: 'Gula Aren Organik Tradisional Nusantara',
+    accompaniment: 'Smoky Caramel & Boba Kenyal Alami',
+    imageUrl: 'https://images.unsplash.com/photo-1594631252845-29fc4cc8cde9?auto=format&fit=crop&w=1200&q=80',
+  },
+  {
+    id: 'jasmine-oolong',
+    cat: 'Signature',
+    name: 'Jasmine Oolong',
+    desc: 'Harmoni seduhan daun oolong semi-fermentasi dengan kuntum melati segar. Menghasilkan karakter amber keemasan dengan aftertaste manis alami.',
+    price: 24000,
+    color: '#E3B567',
+    edition: 'Racikan Spesial',
+    provenance: 'Daun Oolong Panggang Tradisional',
+    accompaniment: 'Kuntum Melati Segar & Sentuhan Madu',
+    imageUrl: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=1200&q=80',
+  },
+  {
+    id: 'classic-green-tea',
+    cat: 'Pure Tea',
+    name: 'Classic Green Tea',
+    desc: 'Seduhan pucuk daun teh hijau pertama pegunungan, kaya antioksidan alami dengan sensasi dingin segar menyejukkan di setiap tegukan.',
+    price: 20000,
+    color: '#B9C79F',
+    edition: 'Pure Harvest',
+    provenance: 'Pucuk Daun Pertama Kebun Ciwidey',
+    accompaniment: 'Crisp Green & Kesejukan Murni Alami',
+    imageUrl: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=1200&q=80',
+  },
+  {
+    id: 'oolong-tea',
+    cat: 'Pure Tea',
+    name: 'Oolong Tea',
+    desc: 'Teh oolong warna amber artisanal dengan aroma panggang halus, menghadirkan kehangatan dan kejernihan rasa otentik tradisi teh berkelas.',
+    price: 22000,
+    color: '#D9A55B',
+    edition: 'Heritage Leaf',
+    provenance: 'Pegunungan Tinggi Teh Semi-Fermentasi',
+    accompaniment: 'Toasted Amber & Warm Woody Finish',
+    imageUrl: 'https://images.unsplash.com/photo-1571934811356-5cc061b6821f?auto=format&fit=crop&w=1200&q=80',
   },
 ]
 
@@ -456,64 +474,340 @@ function BrandBenefits() {
 }
 
 /* ============================================================
-   OUR MENU — preview informatif, klik redirect ke halaman menu
+   OUR SIGNATURE MENU — Editorial Showcase & Horizontal Carousel
    ============================================================ */
 function OurMenuSection() {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
+  const totalSlides = products.length
+
+  const touchStartX = useRef(0)
+  const touchEndX = useRef(0)
+
+  const nextSlide = () => setCurrentIndex((prev) => (prev + 1) % totalSlides)
+  const prevSlide = () => setCurrentIndex((prev) => (prev - 1 + totalSlides) % totalSlides)
+
+  useEffect(() => {
+    if (isPaused) return
+    const timer = setInterval(() => {
+      nextSlide()
+    }, 5500)
+    return () => clearInterval(timer)
+  }, [isPaused, totalSlides])
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX
+    touchEndX.current = e.touches[0].clientX
+  }
+
+  const handleTouchMove = (e) => {
+    touchEndX.current = e.touches[0].clientX
+  }
+
+  const handleTouchEnd = () => {
+    const diff = touchStartX.current - touchEndX.current
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) nextSlide()
+      else prevSlide()
+    }
+  }
+
   return (
-    <section id="menu" className="py-12 lg:py-24 bg-[#FFFDF7] relative overflow-hidden">
-      <Leaf className="absolute -left-6 top-12 w-28 opacity-20" color={C.sageDark} />
-      <Jasmine className="absolute right-4 bottom-10 w-20 opacity-35" />
+    <section
+      id="menu"
+      className="w-full relative px-4 sm:px-6 lg:px-8 py-16 lg:py-24 overflow-hidden bg-[#FFFDF7]"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      {/* Atmospheric Ambient Glows */}
+      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-[#124734]/5 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-1/3 -right-32 w-[30rem] h-[30rem] bg-[#D9A55B]/10 rounded-full blur-[160px] pointer-events-none" />
+      <Leaf className="absolute -left-6 top-12 w-28 opacity-15 pointer-events-none" color={C.sageDark} />
+      <Jasmine className="absolute right-4 bottom-10 w-24 opacity-25 pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 relative z-10">
-        <Reveal className="text-center max-w-xl mx-auto space-y-2 mb-10">
-          <p className="text-xs sm:text-sm font-semibold tracking-widest text-[#A87950] uppercase">Signature Justmine</p>
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-semibold text-[#124734]" style={serif}>Koleksi Rasa Istimewa</h2>
-          <p className="text-xs sm:text-sm text-[#124734]/75">
-            Diseduh dari racikan teh daun murni dan sentuhan melati yang seimbang.
-          </p>
-        </Reveal>
+      {/* Section Header */}
+      <div className="flex flex-col items-center text-center mb-10 lg:mb-14 relative z-10">
+        <div className="flex items-center gap-3 mb-2.5">
+          <span className="w-8 h-[1px] bg-[#124734]/40 block" />
+          <span className="text-xs sm:text-sm font-semibold uppercase tracking-[0.25em] text-[#A87950]">
+            Our Signature Menu
+          </span>
+          <span className="w-8 h-[1px] bg-[#124734]/40 block" />
+        </div>
+        <h2
+          className="text-3xl sm:text-5xl lg:text-[54px] text-[#124734] tracking-tight font-medium leading-tight"
+          style={serif}
+        >
+          Koleksi Rasa Istimewa
+        </h2>
+        <p className="text-xs sm:text-base text-[#124734]/75 max-w-xl mt-3 font-normal leading-relaxed">
+          Diseduh dari racikan daun teh murni dataran tinggi dan keharuman kuntum melati alami yang menenangkan di setiap tegukan.
+        </p>
+      </div>
 
-        {/* Grid 2 kolom mobile / 3 desktop — hanya preview, tidak ada tombol beli */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-6">
-          {products.map((item, i) => (
-            <Reveal key={item.id} delay={i * 60}>
-              <Link
-                to="/menu"
-                className="group rounded-2xl sm:rounded-3xl bg-[#F7F3E9] p-3.5 sm:p-5 border border-[#124734]/10 shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col h-full text-left"
+      {/* ============================================================
+          DESKTOP VIEW (lg:block): Split-Screen Horizontal Carousel
+          ============================================================ */}
+      <div className="hidden lg:block relative w-full max-w-6xl mx-auto z-10">
+        <div className="relative w-full min-h-[580px] lg:min-h-[620px] bg-[#F7F3E9] rounded-3xl shadow-[0_20px_50px_-15px_rgba(18,71,52,0.12)] border border-[#124734]/10 overflow-hidden">
+          {products.map((item, idx) => {
+            const isActive = idx === currentIndex
+            return (
+              <div
+                key={item.id}
+                className={`carousel-slide absolute inset-0 w-full h-full flex flex-row transition-all duration-700 ease-out ${
+                  isActive
+                    ? 'opacity-100 pointer-events-auto z-20 translate-x-0'
+                    : 'opacity-0 pointer-events-none z-10'
+                }`}
               >
-                <div className="relative aspect-square w-full rounded-xl sm:rounded-2xl overflow-hidden mb-3 bg-[#FFFDF7] flex items-center justify-center">
-                  <ProductPhoto p={item} />
+                {/* Left 50% Image Column */}
+                <div className="w-1/2 h-full relative overflow-hidden bg-[#124734]/5">
+                  <ProductPhoto
+                    p={item}
+                    className={`slide-img w-full h-full object-cover object-center transition-transform duration-1000 ease-out ${
+                      isActive ? 'scale-100' : 'scale-105'
+                    }`}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent pointer-events-none" />
+                  <div className="absolute top-6 left-6 py-1.5 px-3.5 bg-[#FFFDF7]/90 backdrop-blur-md rounded-full border border-[#124734]/10 shadow-xs">
+                    <span className="text-[11px] font-bold text-[#124734] tracking-widest uppercase">
+                      {item.edition || 'Signature Series'}
+                    </span>
+                  </div>
                 </div>
-                <h3
-                  className="text-sm sm:text-lg font-bold text-[#124734] group-hover:text-[#5E7A4F] transition-colors line-clamp-1"
-                  style={serif}
-                >
-                  {item.name}
-                </h3>
-                <p className="text-[11px] sm:text-xs text-[#124734]/70 mt-1 line-clamp-2 leading-relaxed flex-1">
-                  {item.desc}
-                </p>
-                <div className="mt-3 pt-2.5 border-t border-[#124734]/10 flex items-center justify-between">
-                  <span className="text-xs sm:text-base font-bold text-[#124734]">{rupiah(item.price)}</span>
-                  <span className="text-[11px] sm:text-xs font-semibold text-[#5E7A4F] flex items-center gap-0.5">
-                    Lihat
-                    <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                  </span>
+
+                {/* Right 50% Content Column */}
+                <div className="w-1/2 p-10 xl:p-14 flex flex-col justify-between bg-[#F7F3E9]">
+                  <div className="space-y-5 my-auto">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#124734] inline-block animate-pulse" />
+                      <span className="text-xs uppercase tracking-[0.2em] font-bold text-[#A87950]">
+                        Our Signature
+                      </span>
+                    </div>
+
+                    <h3
+                      className="text-3xl xl:text-4xl text-[#124734] leading-tight font-semibold"
+                      style={serif}
+                    >
+                      {item.name}
+                    </h3>
+
+                    <p className="text-base text-[#124734]/80 leading-relaxed font-light">
+                      {item.desc}
+                    </p>
+
+                    {/* Editorial Details / Provenance Breakdown */}
+                    <div className="pt-2 grid grid-cols-2 gap-4 bg-[#FFFDF7]/90 rounded-2xl p-5 border border-[#124734]/10 shadow-2xs">
+                      <div>
+                        <span className="block text-[10px] font-bold uppercase tracking-wider text-[#A87950] mb-1">
+                          Asal Bahan (Provenance)
+                        </span>
+                        <span className="text-xs font-semibold text-[#124734] leading-snug block">
+                          {item.provenance}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="block text-[10px] font-bold uppercase tracking-wider text-[#A87950] mb-1">
+                          Karakter Rasa
+                        </span>
+                        <span className="text-xs font-semibold text-[#124734] leading-snug block">
+                          {item.accompaniment}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Slide Archival Footer */}
+                  <div className="pt-6 border-t border-[#124734]/10 flex items-center justify-between text-xs text-[#124734]/70">
+                    <span className="uppercase tracking-widest font-semibold text-[#A87950]">
+                      Justmine Tea &bull; Signature Craft
+                    </span>
+                    <span className="text-xl font-extrabold text-[#124734]">
+                      {rupiah(item.price)}
+                    </span>
+                  </div>
                 </div>
-              </Link>
-            </Reveal>
-          ))}
+              </div>
+            )
+          })}
         </div>
 
-        <div className="text-center mt-8 sm:mt-12">
-          <Link
-            to="/menu"
-            className="inline-flex items-center gap-2 rounded-full px-7 py-3 text-sm font-semibold bg-[#124734] text-[#FFFDF7] shadow-sm hover:bg-[#092D20] active:scale-95 transition-all"
-          >
-            <span className="material-symbols-outlined text-[18px]">menu_book</span>
-            <span>Buka Katalog Menu Lengkap</span>
-          </Link>
+        {/* Carousel Navigation & Interactive Bar Below Frame */}
+        <div className="w-full mt-6 flex items-center justify-between px-2">
+          {/* Micro Index & Indicator Lines */}
+          <div className="flex items-center gap-6">
+            <div className="flex items-baseline space-x-1.5" style={serif}>
+              <span className="text-[#124734] font-bold text-2xl">
+                {String(currentIndex + 1).padStart(2, '0')}
+              </span>
+              <span className="text-[#124734]/40 text-sm">/</span>
+              <span className="text-[#124734]/50 font-normal text-sm">
+                {String(totalSlides).padStart(2, '0')}
+              </span>
+            </div>
+
+            {/* Visual Progress Lines */}
+            <div className="flex items-center gap-2" role="tablist">
+              {products.map((_, i) => (
+                <button
+                  key={i}
+                  aria-label={`Pilih Slide ${i + 1}`}
+                  onClick={() => setCurrentIndex(i)}
+                  className={`h-1.5 rounded-full transition-all duration-300 focus:outline-none ${
+                    i === currentIndex
+                      ? 'w-10 bg-[#124734]'
+                      : 'w-5 bg-[#124734]/20 hover:bg-[#124734]/40'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Controls: Prev & Next Circular Buttons */}
+          <div className="flex items-center gap-3">
+            <button
+              aria-label="Previous offering"
+              onClick={prevSlide}
+              className="w-12 h-12 flex items-center justify-center bg-[#F7F3E9] hover:bg-[#124734] text-[#124734] hover:text-[#FFFDF7] rounded-full border border-[#124734]/15 transition-all duration-300 shadow-xs active:scale-95 focus:outline-none group"
+            >
+              <span className="material-symbols-outlined text-[20px] transition-transform duration-300 group-hover:-translate-x-0.5">
+                arrow_back
+              </span>
+            </button>
+            <button
+              aria-label="Next offering"
+              onClick={nextSlide}
+              className="w-12 h-12 flex items-center justify-center bg-[#F7F3E9] hover:bg-[#124734] text-[#124734] hover:text-[#FFFDF7] rounded-full border border-[#124734]/15 transition-all duration-300 shadow-xs active:scale-95 focus:outline-none group"
+            >
+              <span className="material-symbols-outlined text-[20px] transition-transform duration-300 group-hover:translate-x-0.5">
+                arrow_forward
+              </span>
+            </button>
+          </div>
         </div>
+      </div>
+
+      {/* ============================================================
+          MOBILE VIEW (lg:hidden): Touch-Friendly Carousel Slider
+          ============================================================ */}
+      <div className="lg:hidden relative w-full max-w-md mx-auto z-10">
+        <div
+          className="w-full overflow-hidden rounded-2xl bg-[#F7F3E9] border border-[#124734]/10 shadow-lg"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div
+            className="flex transition-transform duration-500 ease-out w-full will-change-transform"
+            style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+          >
+            {products.map((item) => (
+              <article key={item.id} className="min-w-full flex flex-col p-4 sm:p-5 space-y-4">
+                <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-[#FFFDF7]">
+                  <ProductPhoto p={item} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                  <div className="absolute top-3 left-3 bg-[#FFFDF7]/90 backdrop-blur-md px-3 py-1 rounded-full border border-[#124734]/10 shadow-xs">
+                    <span className="text-[10px] font-bold text-[#124734] tracking-widest uppercase">
+                      {item.edition || 'Our Signature'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col space-y-2 text-center items-center px-1">
+                  <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#A87950]">
+                    Our Signature
+                  </span>
+                  <h3 className="text-xl font-bold text-[#124734]" style={serif}>
+                    {item.name}
+                  </h3>
+                  <p className="text-xs text-[#124734]/75 leading-relaxed max-w-sm font-light">
+                    {item.desc}
+                  </p>
+
+                  <div className="w-full pt-2 mt-1 grid grid-cols-2 gap-2 text-left bg-[#FFFDF7] rounded-xl p-3 border border-[#124734]/10">
+                    <div>
+                      <span className="block text-[9px] font-bold uppercase tracking-wider text-[#A87950]">
+                        Asal Bahan
+                      </span>
+                      <span className="text-[11px] font-semibold text-[#124734] line-clamp-1">
+                        {item.provenance}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold uppercase tracking-wider text-[#A87950]">
+                        Karakter
+                      </span>
+                      <span className="text-[11px] font-semibold text-[#124734] line-clamp-1">
+                        {item.accompaniment}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="w-full pt-2.5 flex items-center justify-between border-t border-[#124734]/10 mt-1">
+                    <span className="text-[11px] font-medium text-[#124734]/60">Harga Spesial</span>
+                    <span className="text-base font-extrabold text-[#124734]">
+                      {rupiah(item.price)}
+                    </span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        {/* Mobile Navigation Controls & Pagination Indicators */}
+        <div className="w-full flex items-center justify-between mt-4 px-2">
+          <button
+            aria-label="Previous Slide"
+            onClick={prevSlide}
+            className="w-10 h-10 rounded-full bg-[#F7F3E9] hover:bg-[#124734] text-[#124734] hover:text-white border border-[#124734]/15 active:scale-95 flex items-center justify-center shadow-xs transition-colors"
+          >
+            <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+          </button>
+
+          <div className="flex flex-col items-center space-y-1.5">
+            <span className="text-xs font-bold text-[#124734] tracking-widest uppercase" style={serif}>
+              {String(currentIndex + 1).padStart(2, '0')} / {String(totalSlides).padStart(2, '0')}
+            </span>
+            <div className="flex items-center space-x-1.5">
+              {products.map((_, idx) => (
+                <button
+                  key={idx}
+                  aria-label={`Slide ${idx + 1}`}
+                  onClick={() => setCurrentIndex(idx)}
+                  className={`h-1 rounded-full transition-all duration-300 ${
+                    idx === currentIndex
+                      ? 'w-5 bg-[#124734]'
+                      : 'w-1.5 bg-[#124734]/25'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+
+          <button
+            aria-label="Next Slide"
+            onClick={nextSlide}
+            className="w-10 h-10 rounded-full bg-[#F7F3E9] hover:bg-[#124734] text-[#124734] hover:text-white border border-[#124734]/15 active:scale-95 flex items-center justify-center shadow-xs transition-colors"
+          >
+            <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Centered Prominent Button Outside Carousel */}
+      <div className="w-full flex justify-center mt-12 lg:mt-16 relative z-10">
+        <Link
+          to="/menu"
+          className="group inline-flex items-center justify-center gap-3 bg-[#124734] hover:bg-[#092D20] text-[#FFFDF7] text-xs sm:text-sm font-bold uppercase tracking-[0.2em] px-8 sm:px-12 py-4 rounded-full transition-all duration-300 shadow-md hover:shadow-xl active:scale-95"
+        >
+          <span>Lihat Menu</span>
+          <span className="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
+            arrow_forward
+          </span>
+        </Link>
       </div>
     </section>
   )

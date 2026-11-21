@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../api/firebase.js'
 import { formatItemOptions, getItemOptionLines } from '../utils/options.js'
@@ -86,9 +86,10 @@ export default function Receipt() {
   const items = Array.isArray(order.items) ? order.items : []
   const itemsTotal = items.reduce((sum, it) => sum + (it.price || 0) * (it.qty || 1), 0)
   const totalQty = items.reduce((sum, it) => sum + (it.qty || 1), 0)
-  const totalAmount = order.total ?? itemsTotal
-  const discount = Number(order.discount || 0)
-  const finalSubtotal = Math.max(0, totalAmount - discount)
+  const discount = Number(order.voucherDiscount || order.discount || 0)
+  const voucherName = order.voucherName || order.voucher?.name || order.appliedVoucher?.name || null
+  const subtotalBeforeDiscount = order.subtotal ?? (order.total != null && discount > 0 ? order.total + discount : itemsTotal)
+  const finalSubtotal = order.total != null ? order.total : Math.max(0, subtotalBeforeDiscount - discount)
   // Pajak Pertambahan Nilai (PPN 11%) dihitung tax-inclusive
   const netSales = Math.round(finalSubtotal / 1.11)
   const ppnAmount = finalSubtotal - netSales
@@ -235,15 +236,20 @@ export default function Receipt() {
           {/* Rincian Finansial, Pajak PB1 & TOTAL (Fore Coffee Style) */}
           <div className="py-2.5 space-y-1 text-[11px] border-b border-dashed border-neutral-400">
             <div className="flex justify-between">
-              <span>Total Inc Tax</span>
-              <span>Rp {totalAmount.toLocaleString('id-ID')}</span>
+              <span>Total Pesanan</span>
+              <span>Rp {subtotalBeforeDiscount.toLocaleString('id-ID')}</span>
             </div>
-            <div className="flex justify-between text-neutral-600">
-              <span>Voucher Discount</span>
-              <span>Rp {discount.toLocaleString('id-ID')}</span>
-            </div>
+            {discount > 0 && (
+              <div className="flex justify-between text-emerald-800 font-semibold">
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[13px] text-emerald-700">loyalty</span>
+                  <span>Voucher ({voucherName || 'Reward Poin'})</span>
+                </span>
+                <span>-Rp {discount.toLocaleString('id-ID')}</span>
+              </div>
+            )}
             <div className="flex justify-between font-bold text-black pt-0.5">
-              <span>SUBTOTAL</span>
+              <span>TOTAL PEMBAYARAN</span>
               <span>Rp {finalSubtotal.toLocaleString('id-ID')}</span>
             </div>
             <div className="flex justify-between text-neutral-600 pt-1 border-t border-dotted border-neutral-300">
@@ -251,7 +257,7 @@ export default function Receipt() {
               <span>Rp {netSales.toLocaleString('id-ID')}</span>
             </div>
             <div className="flex justify-between text-neutral-600">
-              <span>PPN 11%</span>
+              <span>PPN 11% (Termasuk)</span>
               <span>Rp {ppnAmount.toLocaleString('id-ID')}</span>
             </div>
             <div className="flex justify-between items-center font-bold text-black pt-1 border-t border-dotted border-neutral-300">
@@ -289,17 +295,18 @@ export default function Receipt() {
           </div>
 
           {/* Promo & Poin Loyalty (Tanpa QR Code) */}
-          <div className="py-2.5 text-center space-y-1 border-b border-dashed border-neutral-400">
-            <p className="text-[11px] font-bold text-black">
-              Dapatkan {pointsEarned} Poin Melati untuk transaksi ini!
-            </p>
+          <div className="py-2.5 text-center space-y-1.5 border-b border-dashed border-neutral-400">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#124734]/10 border border-[#124734]/20 text-[#124734] text-[10.5px] font-bold">
+              <span className="material-symbols-outlined text-[14px] text-amber-600">stars</span>
+              <span>+{pointsEarned} Poin Loyalitas Diperoleh</span>
+            </div>
             {order.currentPoints != null && (
               <p className="text-[10px] text-neutral-600">
-                Total Poin Member: <span className="font-bold">{order.currentPoints} Poin</span>
+                Total Saldo Poin: <span className="font-bold text-[#124734]">{order.currentPoints} Poin</span>
               </p>
             )}
-            <p className="text-[9.5px] text-neutral-600 leading-tight italic">
-              Tunjukkan struk digital ini ke Barista untuk klaim poin member.
+            <p className="text-[9.5px] text-neutral-500 leading-tight">
+              Poin otomatis ditambahkan ke saldo akun member Anda.
             </p>
           </div>
 
@@ -319,6 +326,23 @@ export default function Receipt() {
 
         {/* ================= TOMBOL AKSI DI LUAR STRUK (PRINT:HIDDEN) ================= */}
         <div className="print:hidden max-w-[360px] mx-auto mt-4 space-y-2.5">
+          {/* Direct CTA ke My Points & Rewards */}
+          <Link
+            to="/rewards"
+            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#124734] to-[#092D20] hover:from-[#092D20] hover:to-[#051c14] text-white text-xs font-bold flex items-center justify-between shadow-sm transition-all active:scale-[0.98] group"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-amber-300 group-hover:scale-105 transition-transform">
+                <span className="material-symbols-outlined text-[18px]">loyalty</span>
+              </div>
+              <div className="text-left">
+                <p className="font-bold text-white text-xs">My Points &amp; Rewards</p>
+                <p className="text-[10px] text-emerald-100 font-normal">Cek saldo poin &amp; tukar reward voucher baru</p>
+              </div>
+            </div>
+            <span className="material-symbols-outlined text-[18px] text-emerald-200 group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+          </Link>
+
           {/* Dua Tombol Utama Sesuai Desain Mockup */}
           <div className="grid grid-cols-2 gap-2.5">
             <button

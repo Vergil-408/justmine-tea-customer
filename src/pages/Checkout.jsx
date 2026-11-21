@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useTable } from '../context/TableContext.jsx'
 import { addGuestOrder } from '../utils/guestOrders.js'
 import { formatItemOptions, getItemOptionLines } from '../utils/options.js'
-import { listenToCustomerVouchers } from '../api/rewards.js'
+import { listenToCustomerVouchers, markVoucherAsUsed } from '../api/rewards.js'
 import TeaLoader from '../components/TeaLoader.jsx'
 
 const SANDBOX_GUIDE = 'https://docs.midtrans.com/docs/testing-payment-on-sandbox'
@@ -141,9 +141,12 @@ export default function Checkout() {
     return () => clearInterval(t)
   }, [stage, order])
 
-  // Pembayaran berhasil: kosongkan keranjang lalu ke halaman struk.
+  // Pembayaran berhasil: kosongkan keranjang, tandai voucher terpakai, lalu ke halaman struk.
   useEffect(() => {
     if (stage !== 'success' || !order) return undefined
+    if (appliedVoucher?.userVoucherId) {
+      markVoucherAsUsed(user?.uid, appliedVoucher.userVoucherId)
+    }
     clearCart()
     const t = setTimeout(() => navigate(`/receipt/${order.orderId}`, { replace: true }), 1500)
     return () => clearTimeout(t)
@@ -163,6 +166,9 @@ export default function Checkout() {
         clientRequestId: requestIdRef.current,
         user,
         customerName: finalCustomerName,
+        voucherDiscount,
+        voucherId: appliedVoucher?.userVoucherId || appliedVoucher?.voucherId || null,
+        voucherName: appliedVoucher?.name || null,
       })
       if (!user) addGuestOrder(result.orderId, result.orderCode) // riwayat & notifikasi tamu
       setOrder(result)

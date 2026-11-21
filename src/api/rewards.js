@@ -250,3 +250,35 @@ export async function redeemRewardVoucher(user, voucher, currentPoints) {
 
   return redeemedVoucher
 }
+
+/**
+ * Tandai voucher yang sudah dipakai saat checkout
+ */
+export async function markVoucherAsUsed(uid, userVoucherId) {
+  if (!userVoucherId) return
+
+  // Update di LocalStorage
+  const localVouchers = getLocalData(LOCAL_STORAGE_KEY_VOUCHERS)
+  const updated = localVouchers.map((v) =>
+    v.userVoucherId === userVoucherId ? { ...v, status: 'used', usedAt: new Date().toISOString() } : v
+  )
+  saveLocalData(LOCAL_STORAGE_KEY_VOUCHERS, updated)
+
+  // Update di Firestore jika user login
+  if (uid) {
+    try {
+      const userRef = doc(db, 'users', uid)
+      const userSnap = await getDoc(userRef)
+      if (userSnap.exists()) {
+        const userData = userSnap.data()
+        const userVouchers = (userData.vouchers || []).map((v) =>
+          v.userVoucherId === userVoucherId ? { ...v, status: 'used', usedAt: new Date().toISOString() } : v
+        )
+        await updateDoc(userRef, { vouchers: userVouchers })
+      }
+    } catch (e) {
+      console.warn('Failed to mark voucher as used in Firestore:', e)
+    }
+  }
+}
+

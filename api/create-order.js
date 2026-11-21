@@ -94,6 +94,9 @@ export default async function handler(req, res) {
     const { items, subtotal } = priceCart(body.items, menuById, groups)
 
     const customerName = String(body.customerName || '').trim() || 'Pelanggan'
+    const discount = Math.max(0, Number(body.voucherDiscount || 0))
+    const total = Math.max(0, subtotal - discount)
+    const pointsEarned = Math.floor(total / 1000)
 
     const result = await createOrderTx(db, {
       clientRequestId,
@@ -105,7 +108,12 @@ export default async function handler(req, res) {
         tableNumber,
         items,
         subtotal,
-        total: subtotal,
+        discount,
+        voucherDiscount: discount,
+        voucherName: body.voucherName || null,
+        voucherId: body.voucherId || null,
+        total,
+        pointsEarned,
         paymentMethod: METHODS[body.paymentMethod],
         paymentStatus: 'belum_dibayar',
         status: 'diproses',

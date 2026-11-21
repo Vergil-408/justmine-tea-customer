@@ -77,10 +77,15 @@ export default function DesktopNav() {
             <span className="material-symbols-outlined text-[20px]">search</span>
           </button>
 
-          <div className="hidden md:flex items-center gap-1.5 bg-secondary-container text-on-secondary-container px-3.5 py-1.5 rounded-full">
-            <span className="material-symbols-outlined text-[15px]">sell</span>
+          <NavLink
+            to="/rewards"
+            className="hidden md:flex items-center gap-1.5 bg-secondary-container hover:bg-primary-container text-on-secondary-container hover:text-on-primary px-3.5 py-1.5 rounded-full transition-colors cursor-pointer"
+            title="Lihat & Tukar Poin Reward"
+          >
+            <span className="material-symbols-outlined text-[15px]">stars</span>
             <span className="text-xs font-semibold">{isLoggedIn ? `${points} Poin Melati` : 'Point Member'}</span>
-          </div>
+            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+          </NavLink>
 
           <TableBadge />
 

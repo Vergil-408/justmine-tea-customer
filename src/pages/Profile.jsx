@@ -309,14 +309,37 @@ export default function Profile() {
         </button>
       </section>
 
-      {/* Poin Loyalty */}
-      <section className="rounded-3xl bg-[#2E4E3A] p-5 text-white shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-wider text-white/80">Poin Loyalty Member</p>
-        <p className="mt-1 flex items-baseline gap-2 text-white">
-          <span className="text-5xl font-extrabold leading-none">{points ?? 0}</span>
-          <span className="text-base font-semibold">pts</span>
-        </p>
-        <p className="mt-3 text-xs text-white/80">Poin masuk otomatis setelah pesanan selesai.</p>
+      {/* Poin Loyalty — Interaktif ke Halaman Rewards */}
+      <section
+        role="button"
+        tabIndex={0}
+        onClick={() => navigate('/rewards')}
+        onKeyDown={(e) => e.key === 'Enter' && navigate('/rewards')}
+        className="group relative rounded-3xl bg-gradient-to-br from-[#124734] to-[#092D20] p-5 sm:p-6 text-white shadow-md cursor-pointer transition-all duration-300 hover:shadow-xl active:scale-[0.98] border border-white/10 overflow-hidden"
+      >
+        <div className="absolute -right-4 -bottom-4 w-28 h-28 bg-white/5 rounded-full blur-xl pointer-events-none" />
+        <div className="relative z-10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white/80">
+              <span className="material-symbols-outlined text-[16px] text-amber-300">stars</span>
+              <span>Poin Loyalty Member</span>
+            </div>
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-white/15 text-white backdrop-blur-xs group-hover:bg-white group-hover:text-[#124734] transition-colors">
+              <span>Tukar Reward</span>
+              <span className="material-symbols-outlined text-[14px] transition-transform group-hover:translate-x-0.5">chevron_right</span>
+            </span>
+          </div>
+
+          <div className="mt-2 flex items-baseline gap-2 text-white">
+            <span className="text-4xl sm:text-5xl font-extrabold leading-none tracking-tight">{points ?? 0}</span>
+            <span className="text-base font-semibold text-white/80">pts</span>
+          </div>
+
+          <div className="mt-3 pt-3 border-t border-white/15 flex items-center justify-between text-xs text-white/85">
+            <p>Kumpulkan &amp; tukarkan poin dengan voucher favorit!</p>
+            <span className="text-[11px] font-bold text-amber-200 underline decoration-amber-200/50">Lihat Voucher &gt;</span>
+          </div>
+        </div>
       </section>
 
       {/* Statistik & Aksi Profil */}

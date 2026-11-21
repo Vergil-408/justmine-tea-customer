@@ -8,6 +8,7 @@ import Tracking from './pages/Tracking.jsx'
 import Receipt from './pages/Receipt.jsx'
 import History from './pages/History.jsx'
 import Profile from './pages/Profile.jsx'
+import Rewards from './pages/Rewards.jsx'
 import Login from './pages/auth/Login.jsx'
 import { NotificationProvider } from './context/NotificationContext.jsx'
 import { TableProvider } from './context/TableContext.jsx'
@@ -30,6 +31,8 @@ export default function App() {
         <Route path="/receipt/:orderId" element={<Receipt />} />
         <Route path="/history" element={<History />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/rewards" element={<Rewards />} />
+        <Route path="/points" element={<Rewards />} />
       </Routes>
       <TableScannerModal />
     </NotificationProvider>

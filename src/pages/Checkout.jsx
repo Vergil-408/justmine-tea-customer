@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useTable } from '../context/TableContext.jsx'
 import { addGuestOrder } from '../utils/guestOrders.js'
 import { formatItemOptions, getItemOptionLines } from '../utils/options.js'
+import { listenToCustomerVouchers } from '../api/rewards.js'
 import TeaLoader from '../components/TeaLoader.jsx'
 
 const SANDBOX_GUIDE = 'https://docs.midtrans.com/docs/testing-payment-on-sandbox'
@@ -61,6 +62,27 @@ export default function Checkout() {
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [copied, setCopied] = useState(false)
   const requestIdRef = useRef(newRequestId())
+
+  // Voucher Reward State
+  const [myVouchers, setMyVouchers] = useState([])
+  const [selectedVoucherId, setSelectedVoucherId] = useState(null)
+
+  useEffect(() => {
+    if (!user) return
+    const unsub = listenToCustomerVouchers(user.uid, (data) => {
+      setMyVouchers(data || [])
+    })
+    return () => unsub && unsub()
+  }, [user])
+
+  const readyVouchers = myVouchers.filter(
+    (v) => v.status === 'ready' && new Date(v.expiresAt) > new Date()
+  )
+  const appliedVoucher = readyVouchers.find(
+    (v) => v.userVoucherId === selectedVoucherId && subtotal >= (v.minPurchase || 0)
+  )
+  const voucherDiscount = appliedVoucher ? (appliedVoucher.discountAmount || 0) : 0
+  const finalTotal = Math.max(0, subtotal - voucherDiscount)
 
   useEffect(() => {
     if (!customerName && (user?.displayName || profile?.displayName)) {
@@ -388,12 +410,70 @@ export default function Checkout() {
               )
             })}
           </div>
+          {voucherDiscount > 0 && (
+            <div className="flex justify-between text-xs font-bold text-[#124734] mt-2 pt-2 border-t border-slate-100">
+              <span className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-[14px]">loyalty</span>
+                Voucher ({appliedVoucher.name})
+              </span>
+              <span>-{rupiah(voucherDiscount)}</span>
+            </div>
+          )}
           <div className="border-t border-dashed border-outline-variant mt-3 pt-3 flex justify-between font-bold">
-            <span>Total</span>
-            <span className="text-tertiary">{rupiah(subtotal)}</span>
+            <span>Total Pembayaran</span>
+            <span className="text-tertiary">{rupiah(finalTotal)}</span>
           </div>
           <p className="text-[11px] text-on-surface-variant mt-2">Total final dihitung ulang oleh server saat pesanan dibuat.</p>
         </section>
+
+        {/* Voucher Reward Selector */}
+        {user && readyVouchers.length > 0 && (
+          <section className={cardCls} aria-label="Voucher Reward">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-[#A87950]">loyalty</span>
+                <h2 className="text-sm font-bold">Voucher Reward (Dari Poin)</h2>
+              </div>
+              <span className="text-[10px] font-bold text-[#124734] bg-[#EAF5EE] px-2 py-0.5 rounded-full">
+                {readyVouchers.length} Siap Pakai
+              </span>
+            </div>
+
+            <div className="space-y-2 mt-2">
+              <select
+                value={selectedVoucherId || ''}
+                onChange={(e) => setSelectedVoucherId(e.target.value || null)}
+                className="w-full px-3 py-2.5 rounded-xl border border-outline-variant bg-surface text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="">Pilih Voucher Reward dari Dompet...</option>
+                {readyVouchers.map((v) => {
+                  const meetsMin = subtotal >= (v.minPurchase || 0)
+                  return (
+                    <option key={v.userVoucherId} value={v.userVoucherId} disabled={!meetsMin}>
+                      {v.name} ({v.benefit}){v.minPurchase > 0 ? ` - Min. Belanja ${rupiah(v.minPurchase)}` : ''} {!meetsMin ? ' [Belum memenuhi min. belanja]' : ''}
+                    </option>
+                  )
+                })}
+              </select>
+
+              {appliedVoucher && (
+                <div className="p-2.5 rounded-xl bg-[#EAF5EE] border border-[#124734]/15 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1.5 text-[#124734] font-bold">
+                    <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                    <span>Hemat {rupiah(voucherDiscount)} dengan {appliedVoucher.name}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedVoucherId(null)}
+                    className="text-[11px] text-slate-500 hover:text-slate-800 font-semibold underline"
+                  >
+                    Hapus
+                  </button>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         <section className={cardCls} aria-label="Metode pembayaran">
           <div className="flex items-center justify-between mb-2">
@@ -444,7 +524,7 @@ export default function Checkout() {
                 <span>Pilih / Scan QR Meja Dulu</span>
               </>
             ) : (
-              `Bayar dengan QRIS · ${rupiah(subtotal)}`
+              `Bayar dengan QRIS · ${rupiah(finalTotal)}`
             )}
           </button>
         </div>

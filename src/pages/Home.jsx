@@ -127,11 +127,12 @@ function CupArt({ color }) {
 
 function ProductPhoto({ p, className = '' }) {
   const [failed, setFailed] = useState(false)
+  const fitClass = className.includes('object-') ? '' : 'object-cover'
   if (p.imageUrl && !failed) {
     return (
       <img src={p.imageUrl} alt={p.name} loading="lazy"
         onError={() => setFailed(true)}
-        className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${className}`} />
+        className={`w-full h-full ${fitClass} transition-transform duration-500 group-hover:scale-105 ${className}`} />
     )
   }
   return (
@@ -498,32 +499,32 @@ function OurMenuSection() {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {/* DESKTOP VIEW (lg:block): 50/50 Split Screen Edge-to-Edge */}
-        <div className="hidden lg:block relative w-full h-[560px] xl:h-[620px]">
+        {/* DESKTOP VIEW (lg:block): Split Screen Edge-to-Edge with 1:1 Aspect-Square Photo */}
+        <div className="hidden lg:block relative w-full h-[520px] lg:h-[580px] xl:h-[620px]">
           {products.map((item, idx) => {
             const isActive = idx === currentIndex
             return (
               <div
                 key={item.id}
-                className={`absolute inset-0 w-full h-full flex flex-row transition-all duration-700 ease-out ${
+                className={`absolute inset-0 w-full h-full flex flex-row items-stretch transition-all duration-700 ease-out ${
                   isActive
                     ? 'opacity-100 pointer-events-auto z-20 translate-x-0'
                     : 'opacity-0 pointer-events-none z-10 translate-x-4'
                 }`}
               >
-                {/* Sisi Kiri: Foto Menu Penuh (50% Full-Screen) */}
-                <div className="w-1/2 h-full relative overflow-hidden bg-[#124734]/5">
+                {/* Sisi Kiri: Foto Menu 1:1 Aspect Square (100% Utuh Tanpa Terpotong) */}
+                <div className="h-full aspect-square shrink-0 relative overflow-hidden bg-[#F7F3E9] flex items-center justify-center">
                   <ProductPhoto
                     p={item}
-                    className={`w-full h-full object-cover object-center transition-transform duration-1000 ease-out ${
+                    className={`w-full h-full object-contain object-center transition-transform duration-700 ease-out ${
                       isActive ? 'scale-100' : 'scale-105'
                     }`}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-transparent to-transparent pointer-events-none" />
                 </div>
 
-                {/* Sisi Kanan: Pure Nama Menu & Deskripsi (50% Full-Screen) */}
-                <div className="w-1/2 h-full flex flex-col justify-center px-12 xl:px-24 2xl:px-32 bg-[#F7F3E9]">
+                {/* Sisi Kanan: Pure Nama Menu & Deskripsi Mengisi Sisa Layar */}
+                <div className="flex-1 h-full flex flex-col justify-center px-10 xl:px-20 2xl:px-28 bg-[#F7F3E9]">
                   <div className="max-w-xl">
                     <h3
                       className="text-4xl xl:text-5xl 2xl:text-6xl text-[#124734] leading-[1.15] font-semibold mb-6"
@@ -542,7 +543,7 @@ function OurMenuSection() {
           })}
         </div>
 
-        {/* MOBILE & TABLET VIEW (lg:hidden): Full-Width Stack Slider */}
+        {/* MOBILE & TABLET VIEW (lg:hidden): Full-Width Stack Slider dengan Aspect Square */}
         <div className="lg:hidden relative w-full">
           <div
             className="flex transition-transform duration-500 ease-out w-full will-change-transform"
@@ -550,10 +551,10 @@ function OurMenuSection() {
           >
             {products.map((item) => (
               <article key={item.id} className="min-w-full flex flex-col">
-                {/* Foto Menu Mobile Full-Width */}
-                <div className="relative w-full h-[320px] sm:h-[400px] overflow-hidden bg-[#124734]/5">
-                  <ProductPhoto p={item} className="w-full h-full object-cover object-center" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
+                {/* Foto Menu Mobile 1:1 Aspect Square (100% Utuh Tanpa Terpotong) */}
+                <div className="relative w-full aspect-square overflow-hidden bg-[#F7F3E9] flex items-center justify-center">
+                  <ProductPhoto p={item} className="w-full h-full object-contain object-center" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-transparent pointer-events-none" />
                 </div>
 
                 {/* Pure Nama Menu & Deskripsi Mobile */}

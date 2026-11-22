@@ -4,6 +4,7 @@ import { collection, doc, onSnapshot, query, where } from 'firebase/firestore'
 import { db } from '../api/firebase.js'
 import { useAuth } from './AuthContext.jsx'
 import { getGuestOrderIds } from '../utils/guestOrders.js'
+import { registerPushToken } from '../api/fcm.js'
 import {
   MAX_NOTIFICATIONS,
   buildNotification,
@@ -146,6 +147,17 @@ export function NotificationProvider({ children }) {
     return () => events.forEach((e) => window.removeEventListener(e, handler))
   }, [])
   useEffect(() => { saveNotifications(items) }, [items])
+
+  // Daftar Web Push FCM saat user login.
+  // Izin diminta sekali setelah interaksi pertama (browser block Notification tanpa gesture).
+  useEffect(() => {
+    if (loading || !user) return
+    // Delay sedikit agar tidak mengganggu UX di awal halaman
+    const t = setTimeout(() => {
+      registerPushToken(user.uid).catch(() => {})
+    }, 3000)
+    return () => clearTimeout(t)
+  }, [user, loading])
 
   // Dipanggil tiap kali Firestore melaporkan status sebuah order.
   // Status yang sudah tersimpan di localStorage juga dibandingkan, jadi perubahan yang terjadi

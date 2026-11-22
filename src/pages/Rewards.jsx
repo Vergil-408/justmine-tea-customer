@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useUserProfile } from '../hooks/useUserProfile.js'
 import {
-  AVAILABLE_VOUCHERS,
+  listenToAvailableVouchers,
   listenToCustomerVouchers,
   listenToPointHistory,
   redeemRewardVoucher,
@@ -57,6 +57,7 @@ export default function Rewards() {
   const [activeTab, setActiveTab] = useState('available')
 
   // Data State
+  const [availableVouchers, setAvailableVouchers] = useState([])
   const [myVouchers, setMyVouchers] = useState([])
   const [pointHistory, setPointHistory] = useState([])
 
@@ -68,6 +69,9 @@ export default function Rewards() {
   const [toastMessage, setToastMessage] = useState(null)
 
   useEffect(() => {
+    const unsubAvailable = listenToAvailableVouchers((data) => {
+      setAvailableVouchers(data || [])
+    })
     const unsubVouchers = listenToCustomerVouchers(user?.uid, (data) => {
       setMyVouchers(data || [])
     })
@@ -75,6 +79,7 @@ export default function Rewards() {
       setPointHistory(data || [])
     })
     return () => {
+      unsubAvailable && unsubAvailable()
       unsubVouchers && unsubVouchers()
       unsubHistory && unsubHistory()
     }
@@ -201,7 +206,7 @@ export default function Rewards() {
             <span className="material-symbols-outlined text-[18px]">redeem</span>
             <span>Voucher Tersedia</span>
             <span className="px-2 py-0.5 rounded-full text-[10px] bg-[#EAF5EE] text-[#124734] font-extrabold">
-              {AVAILABLE_VOUCHERS.length}
+              {availableVouchers.length}
             </span>
             {activeTab === 'available' && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#124734] rounded-t-full" />
@@ -249,97 +254,111 @@ export default function Rewards() {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {AVAILABLE_VOUCHERS.map((voucher) => {
-                const canAfford = currentPoints >= voucher.pointsRequired
-                const isOutOfStock = voucher.remainingQuota <= 0
+            {availableVouchers.length === 0 ? (
+              <div className="bg-white rounded-3xl border border-[#124734]/15 p-8 sm:p-12 text-center space-y-3 shadow-xs">
+                <div className="w-16 h-16 mx-auto rounded-2xl bg-[#F7F3E9] text-[#124734] flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[32px]">redeem</span>
+                </div>
+                <h4 className="font-serif font-bold text-slate-800 text-base sm:text-lg">
+                  Belum Ada Voucher Tersedia
+                </h4>
+                <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+                  Semua voucher reward saat ini sedang dinonaktifkan atau kuota penukaran telah habis. Kumpulkan terus poin loyalitasmu dari setiap pesanan!
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {availableVouchers.map((voucher) => {
+                  const canAfford = currentPoints >= voucher.pointsRequired
+                  const isOutOfStock = voucher.remainingQuota <= 0
 
-                return (
-                  <article
-                    key={voucher.id}
-                    className="relative bg-white rounded-3xl border border-[#124734]/15 shadow-sm p-4 sm:p-5 flex flex-col justify-between overflow-hidden hover:shadow-md transition-shadow group"
-                  >
-                    {/* Voucher Content */}
-                    <div className="flex gap-4 items-start">
-                      {/* Thumbnail Image */}
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-[#F7F3E9] border border-[#124734]/10 shrink-0">
-                        <img
-                          src={voucher.imageUrl}
-                          alt={voucher.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      </div>
-
-                      {/* Detail Info */}
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className="font-serif font-bold text-sm sm:text-base text-slate-900 leading-snug">
-                            {voucher.name}
-                          </h4>
-                          <span className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200 shrink-0">
-                            <span className="material-symbols-outlined text-[12px]">stars</span>
-                            {voucher.pointsRequired} Pts
-                          </span>
+                  return (
+                    <article
+                      key={voucher.id}
+                      className="relative bg-white rounded-3xl border border-[#124734]/15 shadow-sm p-4 sm:p-5 flex flex-col justify-between overflow-hidden hover:shadow-md transition-shadow group"
+                    >
+                      {/* Voucher Content */}
+                      <div className="flex gap-4 items-start">
+                        {/* Thumbnail Image */}
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-[#F7F3E9] border border-[#124734]/10 shrink-0">
+                          <img
+                            src={voucher.imageUrl}
+                            alt={voucher.name}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
                         </div>
 
-                        <p className="text-xs font-bold text-[#124734]">
-                          {voucher.benefit}
-                        </p>
+                        {/* Detail Info */}
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <h4 className="font-serif font-bold text-sm sm:text-base text-slate-900 leading-snug">
+                              {voucher.name}
+                            </h4>
+                            <span className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200 shrink-0">
+                              <span className="material-symbols-outlined text-[12px]">stars</span>
+                              {voucher.pointsRequired} Pts
+                            </span>
+                          </div>
 
-                        <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed line-clamp-2">
-                          {voucher.description}
-                        </p>
+                          <p className="text-xs font-bold text-[#124734]">
+                            {voucher.benefit}
+                          </p>
 
-                        {/* Syarat Khusus */}
-                        <div className="pt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-400">
-                          {voucher.minPurchase > 0 && (
-                            <span>Min. Belanja: {rupiah(voucher.minPurchase)}</span>
+                          <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed line-clamp-2">
+                            {voucher.description}
+                          </p>
+
+                          {/* Syarat Khusus */}
+                          <div className="pt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-400">
+                            {voucher.minPurchase > 0 && (
+                              <span>Min. Belanja: {rupiah(voucher.minPurchase)}</span>
+                            )}
+                            <span>Berlaku: {voucher.validityDays} Hari</span>
+                            <span>Sisa: {voucher.remainingQuota} Kuota</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Bar */}
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+                        <div className="text-[11px]">
+                          {canAfford ? (
+                            <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                              Poin mencukupi
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 font-medium">
+                              Kurang {voucher.pointsRequired - currentPoints} poin lagi
+                            </span>
                           )}
-                          <span>Berlaku: {voucher.validityDays} Hari</span>
-                          <span>Sisa: {voucher.remainingQuota} Kuota</span>
                         </div>
-                      </div>
-                    </div>
 
-                    {/* Action Bar */}
-                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
-                      <div className="text-[11px]">
-                        {canAfford ? (
-                          <span className="text-emerald-700 font-semibold flex items-center gap-1">
-                            <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                            Poin mencukupi
+                        <button
+                          type="button"
+                          disabled={!canAfford || isOutOfStock}
+                          onClick={() => setSelectedVoucherToRedeem(voucher)}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                            !canAfford || isOutOfStock
+                              ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                              : 'bg-[#124734] hover:bg-[#092D20] text-white shadow-xs active:scale-95'
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-[16px]">redeem</span>
+                          <span>
+                            {isOutOfStock
+                              ? 'Kuota Habis'
+                              : canAfford
+                              ? 'Tukar Voucher'
+                              : 'Poin Belum Mencukupi'}
                           </span>
-                        ) : (
-                          <span className="text-slate-400 font-medium">
-                            Kurang {voucher.pointsRequired - currentPoints} poin lagi
-                          </span>
-                        )}
+                        </button>
                       </div>
-
-                      <button
-                        type="button"
-                        disabled={!canAfford || isOutOfStock}
-                        onClick={() => setSelectedVoucherToRedeem(voucher)}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                          !canAfford || isOutOfStock
-                            ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-                            : 'bg-[#124734] hover:bg-[#092D20] text-white shadow-xs active:scale-95'
-                        }`}
-                      >
-                        <span className="material-symbols-outlined text-[16px]">redeem</span>
-                        <span>
-                          {isOutOfStock
-                            ? 'Kuota Habis'
-                            : canAfford
-                            ? 'Tukar Voucher'
-                            : 'Poin Belum Mencukupi'}
-                        </span>
-                      </button>
-                    </div>
-                  </article>
-                )
-              })}
-            </div>
+                    </article>
+                  )
+                })}
+              </div>
+            )}
           </section>
         )}
 

@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, onSnapshot, updateDoc, increment } from 'firebase/firestore'
+import { collection, doc, getDoc, setDoc, onSnapshot, updateDoc, increment } from 'firebase/firestore'
 import { db } from './firebase.js'
 
 // 4 Voucher Resmi Justmine Tea sesuai spesifikasi
@@ -17,6 +17,8 @@ export const AVAILABLE_VOUCHERS = [
     remainingQuota: 640,
     allowBundle: true,
     category: 'discount',
+    active: true,
+    status: 'active',
     imageUrl: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=400&q=80',
   },
   {
@@ -33,6 +35,8 @@ export const AVAILABLE_VOUCHERS = [
     remainingQuota: 158,
     allowBundle: true,
     category: 'discount',
+    active: true,
+    status: 'active',
     imageUrl: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=400&q=80',
   },
   {
@@ -49,6 +53,8 @@ export const AVAILABLE_VOUCHERS = [
     remainingQuota: 45,
     allowBundle: true,
     category: 'discount',
+    active: true,
+    status: 'active',
     imageUrl: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=400&q=80',
   },
   {
@@ -66,6 +72,8 @@ export const AVAILABLE_VOUCHERS = [
     remainingQuota: 105,
     allowBundle: true,
     category: 'topping',
+    active: true,
+    status: 'active',
     imageUrl: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=400&q=80',
   },
 ]
@@ -87,6 +95,60 @@ function saveLocalData(key, data) {
     localStorage.setItem(key, JSON.stringify(data))
   } catch (e) {
     console.warn('LocalStorage save failed:', e)
+  }
+}
+
+/**
+ * Dengarkan katalog voucher yang aktif dari Firestore secara realtime.
+ * Hanya voucher dengan active === true DAN status === 'active' yang ditampilkan ke customer.
+ */
+export function listenToAvailableVouchers(callback) {
+  try {
+    return onSnapshot(
+      collection(db, 'vouchers'),
+      (snap) => {
+        if (snap.empty) {
+          // Jika Firestore kosong, fallback ke list default (hanya yang aktif)
+          callback(AVAILABLE_VOUCHERS.filter((v) => v.active !== false && v.status === 'active'))
+        } else {
+          const list = snap.docs.map((d) => {
+            const data = d.data()
+            const id = d.id
+            const quota = data.quota || 0
+            const redeemedCount = data.redeemedCount || 0
+            const remainingQuota = data.remainingQuota !== undefined
+              ? data.remainingQuota
+              : Math.max(0, quota - redeemedCount)
+
+            const benefit = data.benefit || (
+              data.rewardType === 'free_topping'
+                ? (data.freeToppingName ? `Gratis ${data.freeToppingName}` : 'Gratis 1 Topping Pilihan')
+                : `Diskon Rp${Number(data.discountAmount || 0).toLocaleString('id-ID')}`
+            )
+
+            return {
+              ...data,
+              id,
+              benefit,
+              remainingQuota,
+            }
+          })
+
+          // Filter ketat: HANYA yang active === true && status === 'active'
+          // Jika dinonaktifkan di admin, tidak akan ditampilkan
+          const activeVouchers = list.filter((v) => v.active === true && v.status === 'active')
+          callback(activeVouchers)
+        }
+      },
+      (err) => {
+        console.warn('Firestore listen vouchers error, fallback:', err)
+        callback(AVAILABLE_VOUCHERS.filter((v) => v.active !== false && v.status === 'active'))
+      }
+    )
+  } catch (e) {
+    console.warn('listenToAvailableVouchers failed:', e)
+    callback([])
+    return () => {}
   }
 }
 

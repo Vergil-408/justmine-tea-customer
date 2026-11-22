@@ -247,11 +247,10 @@ export default function Receipt() {
             <div className="flex justify-between items-center pt-1">
               <span>Status</span>
               <span
-                className={`px-1.5 py-0.5 text-[10px] font-extrabold tracking-wider border ${
-                  isPaid
+                className={`px-1.5 py-0.5 text-[10px] font-extrabold tracking-wider border ${isPaid
                     ? 'border-black text-black bg-neutral-100'
                     : 'border-amber-700 text-amber-800 bg-amber-50'
-                }`}
+                  }`}
               >
                 {isPaid ? 'LUNAS / PAID' : 'MENUNGGU KASIR'}
               </span>

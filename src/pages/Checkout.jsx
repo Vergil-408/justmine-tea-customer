@@ -160,9 +160,13 @@ export default function Checkout() {
   async function handlePay() {
     if (submitting) return
     setError('')
+    const finalCustomerName = (customerName || user?.displayName || profile?.displayName || user?.email?.split('@')[0] || 'Guest').trim()
+    if (/\d/.test(finalCustomerName)) {
+      setError('Nama pemesan tidak boleh mengandung angka.')
+      return
+    }
     setSubmitting(true)
     try {
-      const finalCustomerName = (customerName || user?.displayName || profile?.displayName || user?.email?.split('@')[0] || 'Guest').trim()
       const result = await requestCreateOrder({
         items,
         tableNumber: table,
@@ -383,7 +387,15 @@ export default function Checkout() {
                   id="cust-name-input"
                   type="text"
                   value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    if (/\d/.test(val)) {
+                      setError('Nama pemesan tidak boleh mengandung angka.')
+                    } else if (error === 'Nama pemesan tidak boleh mengandung angka.') {
+                      setError('')
+                    }
+                    setCustomerName(val)
+                  }}
                   placeholder="Nama pemesan untuk dipanggil..."
                   className="w-full pl-9 pr-3 py-2 rounded-xl border border-outline-variant bg-surface text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                   required

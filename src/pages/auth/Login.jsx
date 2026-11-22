@@ -71,7 +71,9 @@ export default function Login() {
         setNotice('')
 
         if (!name.trim()) return setError('Nama lengkap wajib diisi.')
+        if (/\d/.test(name)) return setError('Nama lengkap tidak boleh mengandung angka.')
         if (!phone.trim()) return setError('Nomor WhatsApp / HP wajib diisi.')
+        if (/[a-zA-Z]/.test(phone)) return setError('Nomor telepon hanya boleh berisi angka, tidak boleh mengandung huruf.')
         if (!isValidPhone(phone)) return setError('Format nomor HP tidak valid (contoh: 08123456789).')
         if (!isValidEmail(email)) return setError('Format email tidak valid.')
         if (!password || password.length < 6) return setError('Password minimal 6 karakter.')

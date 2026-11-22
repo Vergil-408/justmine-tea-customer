@@ -93,8 +93,21 @@ export default async function handler(req, res) {
     const { menuById, groups } = await loadCatalog(db)
     const { items, subtotal } = priceCart(body.items, menuById, groups)
 
-    const customerName = String(body.customerName || '').trim() || 'Pelanggan'
+    const rawCustomerName = String(body.customerName || '').trim()
+    if (rawCustomerName && /\d/.test(rawCustomerName)) {
+      throw new OrderError('Nama pemesan tidak boleh mengandung angka.', 400)
+    }
+    const customerName = rawCustomerName || 'Pelanggan'
+
+    if (body.voucherDiscount !== undefined && body.voucherDiscount !== null) {
+      if (typeof body.voucherDiscount === 'string' && /[^\d.]/.test(body.voucherDiscount.trim())) {
+        throw new OrderError('Diskon voucher tidak valid (tidak boleh mengandung huruf).', 400)
+      }
+    }
     const discount = Math.max(0, Number(body.voucherDiscount || 0))
+    if (isNaN(discount)) {
+      throw new OrderError('Nominal diskon harus berupa angka.', 400)
+    }
     const total = Math.max(0, subtotal - discount)
     const pointsEarned = Math.floor(total / 1000)
 

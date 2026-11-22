@@ -40,6 +40,12 @@ export function AuthProvider({ children }) {
     }, [])
 
     async function registerWithEmail({ name, phone, email, password }) {
+        if (name && /\d/.test(name)) {
+            throw new Error('Nama lengkap tidak boleh mengandung angka.')
+        }
+        if (phone && /[a-zA-Z]/.test(phone)) {
+            throw new Error('Nomor telepon hanya boleh berisi angka, tidak boleh mengandung huruf.')
+        }
         const cred = await createUserWithEmailAndPassword(auth, email.trim(), password)
         if (name) {
             await updateProfile(cred.user, { displayName: name }).catch(() => {})
@@ -84,6 +90,12 @@ export function AuthProvider({ children }) {
 
     async function updateCustomerProfile({ displayName, phone, photoURL }) {
         if (!user) return
+        if (displayName && /\d/.test(displayName)) {
+            throw new Error('Nama lengkap tidak boleh mengandung angka.')
+        }
+        if (phone && /[a-zA-Z]/.test(phone)) {
+            throw new Error('Nomor telepon hanya boleh berisi angka, tidak boleh mengandung huruf.')
+        }
         const updates = {}
         if (displayName !== undefined) updates.displayName = displayName
         if (phone !== undefined) updates.phone = phone

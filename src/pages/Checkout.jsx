@@ -9,6 +9,7 @@ import { useTable } from '../context/TableContext.jsx'
 import { addGuestOrder } from '../utils/guestOrders.js'
 import { formatItemOptions, getItemOptionLines } from '../utils/options.js'
 import { listenToCustomerVouchers, markVoucherAsUsed } from '../api/rewards.js'
+import { addPointsAfterOrder } from '../api/users.js'
 import TeaLoader from '../components/TeaLoader.jsx'
 
 const SANDBOX_GUIDE = 'https://docs.midtrans.com/docs/testing-payment-on-sandbox'
@@ -141,11 +142,14 @@ export default function Checkout() {
     return () => clearInterval(t)
   }, [stage, order])
 
-  // Pembayaran berhasil: kosongkan keranjang, tandai voucher terpakai, lalu ke halaman struk.
+  // Pembayaran berhasil: kosongkan keranjang, tandai voucher terpakai, tambah poin loyalitas, lalu ke halaman struk.
   useEffect(() => {
     if (stage !== 'success' || !order) return undefined
     if (appliedVoucher?.userVoucherId) {
       markVoucherAsUsed(user?.uid, appliedVoucher.userVoucherId)
+    }
+    if (user?.uid && order.total) {
+      addPointsAfterOrder(user.uid, order.total, order.orderId, order.orderCode)
     }
     clearCart()
     const t = setTimeout(() => navigate(`/receipt/${order.orderId}`, { replace: true }), 1500)

@@ -54,12 +54,49 @@ export async function applyPaymentStatus(db, orderId, statusData, { mapStatus, s
       return { applied: false, reason: 'nominal tidak cocok' }
     }
 
+    // Ambil data user sebelum write (semua read wajib sebelum write dalam Firestore transaction)
+    let userSnap = null
+    let userRef = null
+    if (next === 'dibayar' && order.userId && !order.pointsAwarded) {
+      userRef = db.collection('users').doc(order.userId)
+      userSnap = await tx.get(userRef)
+    }
+
     const patch = {
       paymentStatus: next,
       'payment.transactionStatus': statusData.transaction_status,
       'payment.updatedAt': serverTimestamp,
     }
-    if (next === 'dibayar') patch.paidAt = serverTimestamp
+    if (next === 'dibayar') {
+      patch.paidAt = serverTimestamp
+      if (userSnap && userSnap.exists) {
+        const pointsEarned = Math.floor(Number(order.total || 0) / 1000)
+        patch.pointsEarned = pointsEarned
+        patch.pointsAwarded = true
+
+        if (pointsEarned > 0) {
+          const uData = userSnap.data()
+          const synced = uData.syncedOrderIds || []
+          if (!synced.includes(orderId)) {
+            const history = uData.pointHistory || []
+            const item = {
+              id: 'ph-' + orderId,
+              type: 'earn',
+              title: `Pesanan Selesai #${order.orderCode || orderId.slice(0, 8)}`,
+              points: pointsEarned,
+              date: new Date().toISOString(),
+              ref: `#${order.orderCode || orderId.slice(0, 8)}`,
+            }
+            tx.update(userRef, {
+              points: Number(uData.points || 0) + pointsEarned,
+              totalOrders: Number(uData.totalOrders || 0) + 1,
+              syncedOrderIds: [...synced, orderId],
+              pointHistory: [item, ...history],
+            })
+          }
+        }
+      }
+    }
     if ((next === 'kedaluwarsa' || next === 'gagal') && (order.status === 'menunggu' || order.status === 'diproses')) {
       patch.status = 'dibatalkan'
       patch.cancelledReason = next === 'kedaluwarsa' ? 'QRIS kedaluwarsa (tidak dibayar dalam 15 menit)' : 'Pembayaran gagal'

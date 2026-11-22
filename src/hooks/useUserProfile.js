@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
-import { listenToUserProfile } from '../api/users.js'
+import { listenToUserProfile, syncUserPointsFromOrders } from '../api/users.js'
 
 // Kalau belum login, otomatis return points: 0
 export function useUserProfile() {
@@ -15,6 +15,9 @@ export function useUserProfile() {
             return
         }
         setLoading(true)
+        // Sinkronkan poin yang mungkin belum terhitung dari riwayat order
+        syncUserPointsFromOrders(user.uid).catch(() => {})
+
         const unsub = listenToUserProfile(user.uid, (data) => {
             setProfile(data)
             setLoading(false)

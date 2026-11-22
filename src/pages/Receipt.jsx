@@ -28,38 +28,6 @@ export default function Receipt() {
     })
   }
 
-  const handleShareReceipt = async () => {
-    if (!order) return
-    const url = window.location.href
-    const title = `E-Receipt Justmine Tea #${order.orderCode || order.id}`
-    const displayName = (() => {
-      const name = order.customerName || order.userName || order.buyerName
-      if (!name || name.trim().toLowerCase() === 'pelanggan' || name.trim().toLowerCase() === 'guest') {
-        return 'Guest'
-      }
-      return name.trim()
-    })()
-
-    const text = `*E-RECEIPT JUSTMINE TEA*\n` +
-      `ID Pesanan: #${order.orderCode || order.id}\n` +
-      `Atas Nama: ${displayName}\n` +
-      `Meja: ${tableNum ? `Meja ${tableNum}` : 'Take-Away'}\n` +
-      `Total: ${rupiah(totalAmount)}\n` +
-      `Status: ${isPaid ? 'Lunas / Paid' : 'Menunggu Kasir'}\n\n` +
-      `Lihat struk digital selengkapnya:\n${url}`
-
-    if (navigator.share) {
-      try {
-        await navigator.share({ title, text, url })
-        return
-      } catch (err) {
-        if (err.name !== 'AbortError') console.warn('Share error:', err)
-      }
-    }
-    // Fallback WhatsApp
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
-  }
-
   if (!order) {
     return (
       <TeaLoader
@@ -343,26 +311,15 @@ export default function Receipt() {
             <span className="material-symbols-outlined text-[18px] text-emerald-200 group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
           </Link>
 
-          {/* Dua Tombol Utama Sesuai Desain Mockup */}
-          <div className="grid grid-cols-2 gap-2.5">
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="w-full py-3 px-3 rounded-xl bg-neutral-900 hover:bg-black text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
-            >
-              <span className="material-symbols-outlined text-[18px]">print</span>
-              <span>Cetak Thermal (80mm)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleShareReceipt}
-              className="w-full py-3 px-3 rounded-xl bg-[#0F5A47] hover:bg-[#0c4839] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 text-center"
-            >
-              <span className="material-symbols-outlined text-[18px]">share</span>
-              <span className="leading-tight">Kirim via WhatsApp / Email</span>
-            </button>
-          </div>
+          {/* Tombol Cetak Struk */}
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="w-full py-3 px-4 rounded-xl bg-neutral-900 hover:bg-black text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
+          >
+            <span className="material-symbols-outlined text-[18px]">print</span>
+            <span>Cetak Struk</span>
+          </button>
 
           {/* Tombol Lacak Status Pesanan */}
           <button

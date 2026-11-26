@@ -455,20 +455,22 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
                 <p className="text-xs text-on-surface-variant">Pilihan topping lezat Justmine Tea:</p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {toppingGroup.choices
-                    .filter((c) => c.available !== false)
-                    .map((c) => {
-                      const picked = (rawSelection[toppingGroup.id] || []).includes(c.id)
-                      const icon = c.icon || CHOICE_ICONS[c.id] || 'bubble_chart'
+                  {toppingGroup.choices.map((c) => {
+                    const isSoldOut = c.available === false
+                    const picked = !isSoldOut && (rawSelection[toppingGroup.id] || []).includes(c.id)
+                    const icon = c.icon || CHOICE_ICONS[c.id] || 'bubble_chart'
                     return (
                       <button
                         key={c.id}
                         type="button"
-                        onClick={() => handleToggleMulti(toppingGroup.id, c.id)}
+                        disabled={isSoldOut}
+                        onClick={() => !isSoldOut && handleToggleMulti(toppingGroup.id, c.id)}
                         className={`w-full p-2.5 rounded-xl border transition-all flex items-center justify-between text-left shadow-xs ${
-                          picked
-                            ? 'bg-secondary-container/25 border-primary'
-                            : 'bg-white border-outline-variant/60 hover:border-primary/40'
+                          isSoldOut
+                            ? 'bg-surface-container/60 border-outline-variant/40 opacity-60 cursor-not-allowed'
+                            : picked
+                              ? 'bg-secondary-container/25 border-primary'
+                              : 'bg-white border-outline-variant/60 hover:border-primary/40'
                         }`}
                       >
                         <div className="flex items-center gap-2.5">
@@ -480,22 +482,30 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
                             <span className="material-symbols-outlined text-[18px]">{icon}</span>
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-xs font-bold text-on-surface">{c.label}</span>
+                            <span className={`text-xs font-bold ${isSoldOut ? 'line-through text-on-surface-variant' : 'text-on-surface'}`}>
+                              {c.label}
+                            </span>
                             <span className="text-[11px] font-semibold text-secondary">
                               +{rupiah(c.priceDelta)}
                             </span>
                           </div>
                         </div>
 
-                        <div
-                          className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${
-                            picked
-                              ? 'bg-primary border-primary text-white'
-                              : 'border-outline-variant text-transparent'
-                          }`}
-                        >
-                          <span className="material-symbols-outlined text-[14px]">done</span>
-                        </div>
+                        {isSoldOut ? (
+                          <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200 text-[10px] font-bold shrink-0">
+                            Habis
+                          </span>
+                        ) : (
+                          <div
+                            className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${
+                              picked
+                                ? 'bg-primary border-primary text-white'
+                                : 'border-outline-variant text-transparent'
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-[14px]">done</span>
+                          </div>
+                        )}
                       </button>
                     )
                   })}

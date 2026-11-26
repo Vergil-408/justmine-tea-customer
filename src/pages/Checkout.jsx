@@ -51,7 +51,7 @@ const cardCls = 'bg-surface-container-lowest border border-outline-variant/50 sh
 export default function Checkout() {
   const { items, subtotal, clearCart } = useCart()
   const { user, profile, loading: authLoading } = useAuth()
-  const { table, isLocked, openScanner } = useTable()
+  const { table, tableSessionId, isLocked, openScanner } = useTable()
   const navigate = useNavigate()
 
   const [customerName, setCustomerName] = useState(() => user?.displayName || profile?.displayName || '')
@@ -169,8 +169,7 @@ export default function Checkout() {
     try {
       const result = await requestCreateOrder({
         items,
-        tableNumber: table || null,
-        orderType: table ? 'dine-in' : 'takeaway',
+        tableSessionId: tableSessionId || null,
         paymentMethod: 'qris',
         clientRequestId: requestIdRef.current,
         user,

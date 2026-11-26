@@ -3,6 +3,7 @@
 
 const KEY = 'justmine_table'
 const LOCK_KEY = 'justmine_table_locked'
+const SESSION_KEY = 'justmine_table_session'
 
 // Hanya huruf/angka/strip, maksimal 6 karakter (mis. "25", "A3", "VIP-1"). Selain itu ditolak.
 export function normalizeTable(value) {
@@ -17,6 +18,38 @@ export function readTableFromSearch(search) {
     return normalizeTable(params.get('meja') || params.get('table'))
   } catch {
     return null
+  }
+}
+
+export function readTableTokenFromSearch(search) {
+  try {
+    const params = new URLSearchParams(search)
+    const table = normalizeTable(params.get('meja') || params.get('table'))
+    const token = (params.get('token') || '').trim()
+    if (!table) return null
+    return { table, token: token || null }
+  } catch {
+    return null
+  }
+}
+
+export function loadTableSession() {
+  if (typeof window === 'undefined') return null
+  try {
+    const s = window.sessionStorage.getItem(SESSION_KEY)
+    return s && /^[a-f0-9]{64}$/.test(s) ? s : null
+  } catch {
+    return null
+  }
+}
+
+export function saveTableSession(sessionId) {
+  if (typeof window === 'undefined') return
+  try {
+    if (sessionId) window.sessionStorage.setItem(SESSION_KEY, sessionId)
+    else window.sessionStorage.removeItem(SESSION_KEY)
+  } catch {
+    /* abaikan */
   }
 }
 
@@ -62,8 +95,29 @@ export function clearTableStorage() {
   try {
     window.sessionStorage.removeItem(KEY)
     window.sessionStorage.removeItem(LOCK_KEY)
+    window.sessionStorage.removeItem(SESSION_KEY)
   } catch (err) {
     console.warn('Gagal menghapus nomor meja:', err)
+  }
+}
+
+export function parseQrPayloadFromScan(input) {
+  if (!input) return null
+  const str = String(input).trim()
+  try {
+    let url = null
+    if (str.startsWith('http://') || str.startsWith('https://')) {
+      url = new URL(str)
+    } else if (str.includes('?')) {
+      url = new URL(`https://dummy.local/${str.startsWith('/') ? str.slice(1) : str}`)
+    }
+    if (!url) return null
+    const table = normalizeTable(url.searchParams.get('table') || url.searchParams.get('meja'))
+    const token = (url.searchParams.get('token') || '').trim()
+    if (!table || !token) return null
+    return { table, token }
+  } catch {
+    return null
   }
 }
 

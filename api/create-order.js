@@ -73,10 +73,43 @@ export default async function handler(req, res) {
     const { db, auth, FieldValue } = admin
     const body = req.body && typeof req.body === 'object' ? req.body : {}
 
+    const rawSessionId = typeof body.tableSessionId === 'string' ? body.tableSessionId.trim() : ''
     const hasTableInput = body.tableNumber !== undefined && body.tableNumber !== null && String(body.tableNumber).trim() !== ''
-    const tableNumber = hasTableInput ? normalizeTable(body.tableNumber) : null
-    if (hasTableInput && !tableNumber) throw new OrderError('Format nomor meja tidak valid.')
-    const orderType = tableNumber ? 'dine-in' : 'takeaway'
+    const requestedTable = hasTableInput ? normalizeTable(body.tableNumber) : null
+
+    let tableNumber = null
+    let orderType = 'takeaway'
+    let validatedSessionId = null
+
+    if (rawSessionId) {
+      if (!/^[a-f0-9]{64}$/.test(rawSessionId)) {
+        throw new OrderError('Sesi meja tidak valid. Silakan scan ulang QR meja.', 403)
+      }
+      const sessionSnap = await db.collection('tableSessions').doc(rawSessionId).get()
+      if (!sessionSnap.exists) {
+        throw new OrderError('Sesi meja tidak ditemukan. Silakan scan ulang QR meja.', 403)
+      }
+      const session = sessionSnap.data() || {}
+      if (session.status !== 'active' || (typeof session.expiresAt === 'number' && session.expiresAt <= Date.now())) {
+        throw new OrderError('Sesi meja sudah berakhir atau ditutup. Silakan scan ulang QR meja.', 403)
+      }
+      // Pastikan token meja masih aktif dan belum diregenerasi oleh admin
+      const tableSnap = await db.collection('tables').doc(session.tableNumber).get()
+      const tableData = tableSnap.exists ? tableSnap.data() || {} : null
+      if (!tableData || tableData.tokenStatus !== 'active' || tableData.tokenHash !== session.tokenHash) {
+        throw new OrderError('QR meja sudah tidak aktif atau diperbarui. Silakan scan ulang QR meja.', 403)
+      }
+      // Tolak jika frontend mencoba memanipulasi nomor meja berbeda dari sesi server
+      if (hasTableInput && requestedTable !== session.tableNumber) {
+        throw new OrderError('Manipulasi nomor meja ditolak.', 403)
+      }
+      tableNumber = session.tableNumber
+      orderType = 'dine-in'
+      validatedSessionId = rawSessionId
+    } else if (hasTableInput || body.orderType === 'dine-in') {
+      throw new OrderError('Akses Dine-in memerlukan validasi QR meja terlebih dahulu.', 403)
+    }
+
     if (!METHODS[body.paymentMethod]) throw new OrderError('Metode pembayaran tidak valid.')
     const clientRequestId = String(body.clientRequestId || '')
     if (!REQUEST_ID.test(clientRequestId)) throw new OrderError('Permintaan tidak valid.')

@@ -1,78 +1,139 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import {
   clearTableStorage,
   loadTable,
   loadTableLocked,
-  readTableFromSearch,
+  loadTableSession,
+  readTableTokenFromSearch,
   saveTable,
   saveTableLocked,
+  saveTableSession,
 } from '../utils/table.js'
 
 const TableContext = createContext({
   table: null,
+  tableSessionId: null,
   isLocked: false,
-  setTableNumber: () => {},
+  validatingTable: false,
+  tableError: '',
+  clearTableError: () => {},
+  validateQrPayload: async () => ({ valid: false }),
   clearTable: () => {},
   isScannerOpen: false,
   openScanner: () => {},
   closeScanner: () => {},
 })
 
-// Membaca ?meja=NN atau ?table=NN dari URL setiap navigasi.
-// Jika didapat dari URL / hasil scan QR, nomor meja dikunci (read-only) agar tidak bisa diubah sembarangan.
 export function TableProvider({ children }) {
   const { search } = useLocation()
-  const [table, setTable] = useState(loadTable)
-  const [isLocked, setIsLocked] = useState(loadTableLocked)
+  const [table, setTable] = useState(() => {
+    const t = loadTable()
+    const s = loadTableSession()
+    return t && s ? t : null
+  })
+  const [tableSessionId, setTableSessionId] = useState(loadTableSession)
+  const [isLocked, setIsLocked] = useState(() => Boolean(loadTable() && loadTableSession() && loadTableLocked()))
+  const [validatingTable, setValidatingTable] = useState(false)
+  const [tableError, setTableError] = useState('')
   const [isScannerOpen, setIsScannerOpen] = useState(false)
 
-  useEffect(() => {
-    const fromUrl = readTableFromSearch(search)
-    if (fromUrl) {
-      saveTable(fromUrl)
-      saveTableLocked(true)
-      setTable(fromUrl)
-      setIsLocked(true)
-    }
-  }, [search])
-
-  const setTableNumber = (num, { locked = false } = {}) => {
-    if (!num) {
-      clearTableStorage()
-      setTable(null)
-      setIsLocked(false)
-      return
-    }
-    saveTable(num)
-    saveTableLocked(locked)
-    setTable(num)
-    setIsLocked(locked)
-  }
-
-  const clearTable = () => {
+  const clearTable = useCallback(() => {
     clearTableStorage()
     setTable(null)
+    setTableSessionId(null)
     setIsLocked(false)
-  }
+  }, [])
 
-  const openScanner = () => {
+  const validateQrPayload = useCallback(async ({ table: rawTable, token }) => {
+    if (!rawTable || !token) {
+      clearTable()
+      const msg = 'QR meja tidak memiliki token yang valid. Mode dialihkan ke Takeaway.'
+      setTableError(msg)
+      return { valid: false, error: msg }
+    }
+
+    setValidatingTable(true)
+    setTableError('')
+    try {
+      const res = await fetch('/api/table/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: rawTable, token }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.valid || !data.sessionId || !data.tableNumber) {
+        clearTable()
+        const msg = data.error || 'QR meja tidak valid atau sudah tidak aktif.'
+        setTableError(msg)
+        return { valid: false, error: msg }
+      }
+
+      saveTable(data.tableNumber)
+      saveTableSession(data.sessionId)
+      saveTableLocked(true)
+      setTable(data.tableNumber)
+      setTableSessionId(data.sessionId)
+      setIsLocked(true)
+      return { valid: true, sessionId: data.sessionId, tableNumber: data.tableNumber }
+    } catch {
+      const msg = 'Gagal memverifikasi QR meja ke server. Periksa koneksi internet.'
+      setTableError(msg)
+      return { valid: false, error: msg }
+    } finally {
+      setValidatingTable(false)
+    }
+  }, [clearTable])
+
+  useEffect(() => {
+    const parsed = readTableTokenFromSearch(search)
+    if (!parsed) return
+
+    // Skenario C: URL punya ?table=X tapi tanpa token -> tolak Dine-in & fallback Takeaway
+    if (!parsed.token) {
+      clearTable()
+      setTableError('Akses meja memerlukan scan QR resmi di meja. Mode dialihkan ke Takeaway.')
+      return
+    }
+
+    validateQrPayload(parsed)
+  }, [search, clearTable, validateQrPayload])
+
+  const openScanner = useCallback(() => {
     if (isLocked) return
     setIsScannerOpen(true)
-  }
-  const closeScanner = () => setIsScannerOpen(false)
+  }, [isLocked])
+
+  const closeScanner = useCallback(() => setIsScannerOpen(false), [])
+  const clearTableError = useCallback(() => setTableError(''), [])
 
   const value = useMemo(
     () => ({
       table,
+      tableSessionId,
       isLocked,
-      setTableNumber,
+      validatingTable,
+      tableError,
+      clearTableError,
+      validateQrPayload,
       clearTable,
       isScannerOpen,
       openScanner,
       closeScanner,
     }),
-    [table, isLocked, isScannerOpen]
+    [
+      table,
+      tableSessionId,
+      isLocked,
+      validatingTable,
+      tableError,
+      clearTableError,
+      validateQrPayload,
+      clearTable,
+      isScannerOpen,
+      openScanner,
+      closeScanner,
+    ]
   )
 
   return <TableContext.Provider value={value}>{children}</TableContext.Provider>

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Html5Qrcode } from 'html5-qrcode'
 import { useTable } from '../context/TableContext.jsx'
-import { parseTableFromInput } from '../utils/table.js'
+import { parseQrPayloadFromScan } from '../utils/table.js'
 
 /**
  * Memisahkan dan memprioritaskan kamera fisik laptop/HP di atas kamera virtual
@@ -39,10 +39,8 @@ function sortAndFilterDevices(devices) {
 }
 
 export default function TableScannerModal() {
-  const { table, setTableNumber, clearTable, isScannerOpen, closeScanner } = useTable()
+  const { validateQrPayload, clearTable, isScannerOpen, closeScanner } = useTable()
 
-  const [activeTab, setActiveTab] = useState('camera') // 'camera' | 'manual'
-  const [manualInput, setManualInput] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
   const [successTable, setSuccessTable] = useState('')
   const [cameraPermissionError, setCameraPermissionError] = useState(false)
@@ -60,13 +58,12 @@ export default function TableScannerModal() {
       setErrorMsg('')
       setSuccessTable('')
       setCameraPermissionError(false)
-      setManualInput(table || '')
     }
-  }, [isScannerOpen, table])
+  }, [isScannerOpen])
 
   // Lifecycle scanner kamera (Mencegah Link to Windows membajak webcam laptop)
   useEffect(() => {
-    if (!isScannerOpen || activeTab !== 'camera' || successTable) {
+    if (!isScannerOpen || successTable) {
       stopScanner()
       return
     }

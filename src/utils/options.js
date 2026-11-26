@@ -73,11 +73,9 @@ export function resolveOptions(item, groups = []) {
       ids = ['gula', 'es', 'topping', 'catatan']
     }
   } else {
-    // Pastikan aturan kategori selalu dipatuhi
+    // Jika admin sudah menentukan optionGroupIds secara eksplisit, cukup pastikan item makanan tidak memunculkan opsi minuman
     if (isFood) {
       ids = ids.filter((id) => id === 'catatan')
-    } else if (isSignature) {
-      ids = ids.filter((id) => id !== 'topping' && id !== 'topping_tea')
     }
   }
 

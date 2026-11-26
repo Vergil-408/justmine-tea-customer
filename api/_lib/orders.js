@@ -69,6 +69,10 @@ export async function applyPaymentStatus(db, orderId, statusData, { mapStatus, s
     }
     if (next === 'dibayar') {
       patch.paidAt = serverTimestamp
+      // Jika pembayaran lunas, ubah status pesanan menjadi 'diproses' agar masuk antrean dapur
+      if (order.status === 'menunggu_pembayaran' || order.status === 'menunggu' || !order.status) {
+        patch.status = 'diproses'
+      }
       if (userSnap && userSnap.exists) {
         const pointsEarned = Math.floor(Number(order.total || 0) / 1000)
         patch.pointsEarned = pointsEarned
@@ -97,7 +101,7 @@ export async function applyPaymentStatus(db, orderId, statusData, { mapStatus, s
         }
       }
     }
-    if ((next === 'kedaluwarsa' || next === 'gagal') && (order.status === 'menunggu' || order.status === 'diproses')) {
+    if ((next === 'kedaluwarsa' || next === 'gagal') && (order.status === 'menunggu' || order.status === 'diproses' || order.status === 'menunggu_pembayaran')) {
       patch.status = 'dibatalkan'
       patch.cancelledReason = next === 'kedaluwarsa' ? 'QRIS kedaluwarsa (tidak dibayar dalam 15 menit)' : 'Pembayaran gagal'
     }

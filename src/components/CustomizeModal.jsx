@@ -455,9 +455,11 @@ export default function CustomizeModal({ item, isOpen, onClose }) {
                 <p className="text-xs text-on-surface-variant">Pilihan topping lezat Justmine Tea:</p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {toppingGroup.choices.map((c) => {
-                    const picked = (rawSelection[toppingGroup.id] || []).includes(c.id)
-                    const icon = CHOICE_ICONS[c.id] || 'bubble_chart'
+                  {toppingGroup.choices
+                    .filter((c) => c.available !== false)
+                    .map((c) => {
+                      const picked = (rawSelection[toppingGroup.id] || []).includes(c.id)
+                      const icon = c.icon || CHOICE_ICONS[c.id] || 'bubble_chart'
                     return (
                       <button
                         key={c.id}

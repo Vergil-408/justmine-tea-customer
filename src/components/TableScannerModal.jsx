@@ -3,8 +3,6 @@ import { Html5Qrcode } from 'html5-qrcode'
 import { useTable } from '../context/TableContext.jsx'
 import { parseTableFromInput } from '../utils/table.js'
 
-const QUICK_TABLES = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '12', '15']
-
 /**
  * Memisahkan dan memprioritaskan kamera fisik laptop/HP di atas kamera virtual
  * seperti "Microsoft Link to Windows" / "Phone Link" / "OBS Virtual Camera".
@@ -202,7 +200,7 @@ export default function TableScannerModal() {
     const parsed = parseTableFromInput(rawResult)
     if (parsed) {
       setSuccessTable(parsed)
-      setTableNumber(parsed)
+      setTableNumber(parsed, { locked: true })
       setErrorMsg('')
       stopScanner()
 
@@ -258,15 +256,10 @@ export default function TableScannerModal() {
     }
 
     setSuccessTable(parsed)
-    setTableNumber(parsed)
+    setTableNumber(parsed, { locked: false })
     setTimeout(() => {
       closeScanner()
     }, 1000)
-  }
-
-  function handleSelectChip(val) {
-    setManualInput(val)
-    setErrorMsg('')
   }
 
   function handleClearTable() {
@@ -445,12 +438,15 @@ export default function TableScannerModal() {
               </div>
             )}
 
-            {/* TAB 2: INPUT MANUAL */}
+            {/* TAB 2: INPUT MANUAL (DARURAT BILA KAMERA BERMASALAH) */}
             {activeTab === 'manual' && (
-              <form onSubmit={handleManualSubmit} className="space-y-4">
+              <form onSubmit={handleManualSubmit} className="space-y-3">
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] leading-relaxed">
+                  <strong>Catatan:</strong> Gunakan input manual ini hanya jika kamera tidak dapat memindai QR di meja. Jika pesan untuk dibawa pulang, cukup gunakan mode <strong>Takeaway</strong> tanpa mengisi meja.
+                </div>
                 <div>
                   <label htmlFor="table-input" className="block text-xs font-bold text-[#124734] mb-1.5">
-                    Nomor Meja
+                    Kode / Nomor Meja
                   </label>
                   <div className="flex gap-2">
                     <input
@@ -459,7 +455,7 @@ export default function TableScannerModal() {
                       maxLength={6}
                       value={manualInput}
                       onChange={(e) => setManualInput(e.target.value)}
-                      placeholder="Misal: 12 atau A1"
+                      placeholder="Contoh: 12 atau A1"
                       className="flex-1 px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm font-bold text-[#124734] uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-[#124734]"
                       autoFocus
                     />
@@ -470,27 +466,6 @@ export default function TableScannerModal() {
                     >
                       Pilih
                     </button>
-                  </div>
-                </div>
-
-                {/* Quick Table Chips */}
-                <div>
-                  <p className="text-[11px] font-semibold text-stone-500 mb-2">Pilihan Cepat Meja:</p>
-                  <div className="grid grid-cols-4 gap-2">
-                    {QUICK_TABLES.map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => handleSelectChip(t)}
-                        className={`py-2 px-1 text-xs font-bold rounded-xl border transition-all ${
-                          manualInput.toUpperCase() === t
-                            ? 'bg-[#124734] text-white border-[#124734] shadow-xs'
-                            : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
-                        }`}
-                      >
-                        Meja {t}
-                      </button>
-                    ))}
                   </div>
                 </div>
               </form>
@@ -517,7 +492,7 @@ export default function TableScannerModal() {
               onClick={handleClearTable}
               className="text-red-600 font-semibold hover:underline"
             >
-              Lepas Meja
+              Ganti ke Takeaway
             </button>
           </div>
         )}

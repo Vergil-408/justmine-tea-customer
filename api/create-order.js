@@ -73,8 +73,10 @@ export default async function handler(req, res) {
     const { db, auth, FieldValue } = admin
     const body = req.body && typeof req.body === 'object' ? req.body : {}
 
-    const tableNumber = normalizeTable(body.tableNumber)
-    if (!tableNumber) throw new OrderError('Nomor meja belum ada. Scan QR di mejamu dulu.')
+    const hasTableInput = body.tableNumber !== undefined && body.tableNumber !== null && String(body.tableNumber).trim() !== ''
+    const tableNumber = hasTableInput ? normalizeTable(body.tableNumber) : null
+    if (hasTableInput && !tableNumber) throw new OrderError('Format nomor meja tidak valid.')
+    const orderType = tableNumber ? 'dine-in' : 'takeaway'
     if (!METHODS[body.paymentMethod]) throw new OrderError('Metode pembayaran tidak valid.')
     const clientRequestId = String(body.clientRequestId || '')
     if (!REQUEST_ID.test(clientRequestId)) throw new OrderError('Permintaan tidak valid.')
@@ -119,6 +121,7 @@ export default async function handler(req, res) {
         userId,
         customerName,
         tableNumber,
+        orderType,
         items,
         subtotal,
         discount,
@@ -129,7 +132,7 @@ export default async function handler(req, res) {
         pointsEarned,
         paymentMethod: METHODS[body.paymentMethod],
         paymentStatus: 'belum_dibayar',
-        status: 'diproses',
+        status: body.paymentMethod === 'qris' ? 'menunggu_pembayaran' : 'menunggu',
         clientRequestId,
       }),
     })

@@ -14,6 +14,7 @@ import BottomNav from '../components/BottomNav.jsx'
 
 // Warna status disamakan dengan Home, Tracking, dan Kasir App.
 const STATUS = {
+  menunggu_pembayaran: { label: 'Menunggu Bayar', badge: 'bg-amber-100 text-amber-800 ring-amber-300', dot: 'bg-amber-500' },
   menunggu: { label: 'Menunggu', badge: 'bg-tertiary-fixed text-tertiary ring-tertiary/30', dot: 'bg-tertiary' },
   diproses: { label: 'Diproses', badge: 'bg-secondary-container text-on-secondary-container ring-primary/20', dot: 'bg-primary-container' },
   siap: { label: 'Siap', badge: 'bg-primary-container text-on-primary ring-primary-container', dot: 'bg-on-primary' },

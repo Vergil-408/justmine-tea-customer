@@ -51,7 +51,7 @@ const cardCls = 'bg-surface-container-lowest border border-outline-variant/50 sh
 export default function Checkout() {
   const { items, subtotal, clearCart } = useCart()
   const { user, profile, loading: authLoading } = useAuth()
-  const { table, openScanner } = useTable()
+  const { table, isLocked, openScanner } = useTable()
   const navigate = useNavigate()
 
   const [customerName, setCustomerName] = useState(() => user?.displayName || profile?.displayName || '')
@@ -169,7 +169,8 @@ export default function Checkout() {
     try {
       const result = await requestCreateOrder({
         items,
-        tableNumber: table,
+        tableNumber: table || null,
+        orderType: table ? 'dine-in' : 'takeaway',
         paymentMethod: 'qris',
         clientRequestId: requestIdRef.current,
         user,
@@ -329,7 +330,7 @@ export default function Checkout() {
     )
   }
 
-  const canPay = !!table && !authLoading && !submitting
+  const canPay = !authLoading && !submitting
 
   return (
     <Shell title="Pembayaran" onBack={() => navigate(-1)}>
@@ -341,33 +342,40 @@ export default function Checkout() {
                 <div className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-primary-container">table_restaurant</span>
                   <div>
-                    <p className="text-xs text-on-surface-variant">Pesanan diantar ke</p>
+                    <p className="text-xs text-on-surface-variant">Pesanan diantar ke (Dine-in)</p>
                     <p className="font-bold">Meja {table}</p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={openScanner}
-                  className="text-xs font-bold text-primary hover:underline px-2.5 py-1 rounded-lg border border-primary/20 bg-primary/5 active:scale-95 transition-all"
-                >
-                  Ubah Meja
-                </button>
+                {isLocked ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+                    <span className="material-symbols-outlined text-[13px]">lock</span>
+                    <span>Terkunci via QR</span>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={openScanner}
+                    className="text-xs font-bold text-primary hover:underline px-2.5 py-1 rounded-lg border border-primary/20 bg-primary/5 active:scale-95 transition-all"
+                  >
+                    Ubah / Takeaway
+                  </button>
+                )}
               </div>
             ) : (
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-error mt-0.5">qr_code_scanner</span>
+                  <span className="material-symbols-outlined text-primary mt-0.5">shopping_bag</span>
                   <div>
-                    <p className="font-bold text-sm">Nomor meja belum terisi</p>
+                    <p className="font-bold text-sm">Mode Pesanan: Takeaway (Bawa Pulang)</p>
                     <p className="text-xs text-on-surface-variant mt-0.5">
-                      Diperlukan agar pesanan bisa diantar langsung ke mejamu.
+                      Ambil pesanan di kasir. Jika duduk di gerai, scan QR di mejamu.
                     </p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={openScanner}
-                  className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-white text-xs font-bold shadow-xs hover:bg-primary-dark active:scale-95 transition-transform"
+                  className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-primary/30 text-primary bg-primary/5 text-xs font-bold hover:bg-primary/10 active:scale-95 transition-transform"
                 >
                   <span className="material-symbols-outlined text-[16px]">qr_code_scanner</span>
                   <span>Scan Meja</span>

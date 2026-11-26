@@ -2,6 +2,7 @@
 // Disimpan di sessionStorage: hilang sendiri saat tab ditutup, jadi tidak "nyangkut" ke hari berikutnya.
 
 const KEY = 'justmine_table'
+const LOCK_KEY = 'justmine_table_locked'
 
 // Hanya huruf/angka/strip, maksimal 6 karakter (mis. "25", "A3", "VIP-1"). Selain itu ditolak.
 export function normalizeTable(value) {
@@ -12,9 +13,29 @@ export function normalizeTable(value) {
 
 export function readTableFromSearch(search) {
   try {
-    return normalizeTable(new URLSearchParams(search).get('meja'))
+    const params = new URLSearchParams(search)
+    return normalizeTable(params.get('meja') || params.get('table'))
   } catch {
     return null
+  }
+}
+
+export function loadTableLocked() {
+  if (typeof window === 'undefined') return false
+  try {
+    return window.sessionStorage.getItem(LOCK_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function saveTableLocked(locked) {
+  if (typeof window === 'undefined') return
+  try {
+    if (locked) window.sessionStorage.setItem(LOCK_KEY, '1')
+    else window.sessionStorage.removeItem(LOCK_KEY)
+  } catch {
+    /* abaikan */
   }
 }
 
@@ -40,6 +61,7 @@ export function clearTableStorage() {
   if (typeof window === 'undefined') return
   try {
     window.sessionStorage.removeItem(KEY)
+    window.sessionStorage.removeItem(LOCK_KEY)
   } catch (err) {
     console.warn('Gagal menghapus nomor meja:', err)
   }

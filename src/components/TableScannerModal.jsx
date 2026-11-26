@@ -151,7 +151,7 @@ export default function TableScannerModal() {
           setIsInitializingCamera(false)
           setCameraPermissionError(true)
           setErrorMsg(
-            'Webcam atau kamera tidak dapat diakses. Silakan periksa izin browser atau gunakan opsi Upload Foto / Ketik Manual.'
+            'Webcam atau kamera tidak dapat diakses. Silakan periksa izin browser atau gunakan opsi Upload Foto QR.'
           )
         }
       }
@@ -162,7 +162,7 @@ export default function TableScannerModal() {
       clearTimeout(timer)
       stopScanner()
     }
-  }, [isScannerOpen, activeTab, successTable, selectedDeviceId])
+  }, [isScannerOpen, successTable, selectedDeviceId])
 
   function stopScanner() {
     if (isStoppingRef.current) return
@@ -193,20 +193,22 @@ export default function TableScannerModal() {
     setSelectedDeviceId(deviceId)
   }
 
-  function handleScanSuccess(rawResult) {
-    const parsed = parseTableFromInput(rawResult)
-    if (parsed) {
-      setSuccessTable(parsed)
-      setTableNumber(parsed, { locked: true })
+  async function handleScanSuccess(rawResult) {
+    const parsed = parseQrPayloadFromScan(rawResult)
+    if (!parsed) {
+      setErrorMsg('QR tidak valid atau tidak memiliki token resmi meja.')
+      return
+    }
+    stopScanner()
+    const res = await validateQrPayload(parsed)
+    if (res.valid) {
+      setSuccessTable(res.tableNumber)
       setErrorMsg('')
-      stopScanner()
-
-      // Tutup otomatis setelah feedback
       setTimeout(() => {
         closeScanner()
       }, 1400)
     } else {
-      setErrorMsg(`QR tidak dikenali sebagai meja Justmine Tea (${rawResult.slice(0, 25)}...)`)
+      setErrorMsg(res.error || 'QR meja ditolak oleh server.')
     }
   }
 
@@ -243,25 +245,8 @@ export default function TableScannerModal() {
     }
   }
 
-  function handleManualSubmit(e) {
-    e?.preventDefault()
-    setErrorMsg('')
-    const parsed = parseTableFromInput(manualInput)
-    if (!parsed) {
-      setErrorMsg('Masukkan nomor meja yang valid (contoh: 12, A1, VIP-1)')
-      return
-    }
-
-    setSuccessTable(parsed)
-    setTableNumber(parsed, { locked: false })
-    setTimeout(() => {
-      closeScanner()
-    }, 1000)
-  }
-
   function handleClearTable() {
     clearTable()
-    setManualInput('')
     setSuccessTable('')
     closeScanner()
   }
@@ -302,32 +287,10 @@ export default function TableScannerModal() {
           </button>
         </div>
 
-        {/* Tab Navigasi: Kamera vs Input Manual */}
-        <div className="p-3 bg-stone-50 border-b border-stone-100 flex gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab('camera')}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-              activeTab === 'camera'
-                ? 'bg-[#124734] text-white shadow-xs'
-                : 'bg-white text-stone-600 hover:bg-stone-100'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">qr_code_scanner</span>
-            Webcam / Kamera
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('manual')}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-              activeTab === 'manual'
-                ? 'bg-[#124734] text-white shadow-xs'
-                : 'bg-white text-stone-600 hover:bg-stone-100'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">edit_note</span>
-            Ketik Meja
-          </button>
+        {/* Info bar: Scan QR resmi meja */}
+        <div className="px-5 py-2.5 bg-stone-50 border-b border-stone-100 flex items-center gap-2 text-[11px] text-stone-600">
+          <span className="material-symbols-outlined text-[15px] text-[#124734]">verified_user</span>
+          <span>Scan QR resmi di meja untuk membuka sesi Dine-in.</span>
         </div>
 
         {/* Status Berhasil Terhubung */}
@@ -346,9 +309,8 @@ export default function TableScannerModal() {
           </div>
         ) : (
           <div className="p-5">
-            {/* TAB 1: SCAN KAMERA / WEBCAM */}
-            {activeTab === 'camera' && (
-              <div className="space-y-3">
+            {/* SCAN KAMERA / WEBCAM */}
+            <div className="space-y-3">
                 {/* Dropdown Pemilihan Kamera jika lebih dari 1 */}
                 {availableCameras.length > 1 && (
                   <div className="flex items-center gap-2 px-2.5 py-1.5 bg-stone-100 rounded-xl border border-stone-200">
@@ -402,15 +364,8 @@ export default function TableScannerModal() {
                         videocam_off
                       </span>
                       <p className="text-xs leading-relaxed text-stone-300">
-                        Webcam laptop tidak dapat diakses atau diblokir browser.
+                        Webcam laptop tidak dapat diakses atau diblokir browser. Gunakan opsi Upload Foto QR di bawah.
                       </p>
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('manual')}
-                        className="mt-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-full active:scale-95 transition-transform"
-                      >
-                        Ketik Nomor Meja Saja
-                      </button>
                     </div>
                   )}
                 </div>
@@ -433,40 +388,6 @@ export default function TableScannerModal() {
                   </label>
                 </div>
               </div>
-            )}
-
-            {/* TAB 2: INPUT MANUAL (DARURAT BILA KAMERA BERMASALAH) */}
-            {activeTab === 'manual' && (
-              <form onSubmit={handleManualSubmit} className="space-y-3">
-                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] leading-relaxed">
-                  <strong>Catatan:</strong> Gunakan input manual ini hanya jika kamera tidak dapat memindai QR di meja. Jika pesan untuk dibawa pulang, cukup gunakan mode <strong>Takeaway</strong> tanpa mengisi meja.
-                </div>
-                <div>
-                  <label htmlFor="table-input" className="block text-xs font-bold text-[#124734] mb-1.5">
-                    Kode / Nomor Meja
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      id="table-input"
-                      type="text"
-                      maxLength={6}
-                      value={manualInput}
-                      onChange={(e) => setManualInput(e.target.value)}
-                      placeholder="Contoh: 12 atau A1"
-                      className="flex-1 px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm font-bold text-[#124734] uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-[#124734]"
-                      autoFocus
-                    />
-                    <button
-                      type="submit"
-                      disabled={!manualInput.trim()}
-                      className="px-5 py-2.5 bg-[#124734] text-white text-xs font-bold rounded-xl disabled:opacity-40 hover:bg-[#092D20] active:scale-95 transition-all shadow-xs"
-                    >
-                      Pilih
-                    </button>
-                  </div>
-                </div>
-              </form>
-            )}
 
             {/* Pesan Error */}
             {errorMsg && (
@@ -478,21 +399,7 @@ export default function TableScannerModal() {
           </div>
         )}
 
-        {/* Footer Meja Saat Ini & Tombol Lepas Meja */}
-        {table && !successTable && (
-          <div className="px-5 py-3 bg-stone-50 border-t border-stone-100 flex items-center justify-between text-xs">
-            <span className="text-stone-600">
-              Meja saat ini: <strong className="text-[#124734]">Meja {table}</strong>
-            </span>
-            <button
-              type="button"
-              onClick={handleClearTable}
-              className="text-red-600 font-semibold hover:underline"
-            >
-              Ganti ke Takeaway
-            </button>
-          </div>
-        )}
+        {/* Catatan: tidak ada tombol ganti meja manual demi keamanan sesi QR */}
       </div>
     </div>
   )

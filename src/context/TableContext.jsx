@@ -100,9 +100,8 @@ export function TableProvider({ children }) {
   }, [search, clearTable, validateQrPayload])
 
   const openScanner = useCallback(() => {
-    if (isLocked) return
     setIsScannerOpen(true)
-  }, [isLocked])
+  }, [])
 
   const closeScanner = useCallback(() => setIsScannerOpen(false), [])
   const clearTableError = useCallback(() => setTableError(''), [])

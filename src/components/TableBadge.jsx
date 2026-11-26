@@ -24,15 +24,17 @@ export default function TableBadge({ className = '' }) {
 
   if (isLocked) {
     return (
-      <div
-        className={`inline-flex items-center gap-1 rounded-full bg-primary text-white text-xs font-bold px-2.5 py-1 shadow-xs select-none ${className}`}
-        aria-label={`Meja ${table} terkunci dari QR`}
-        title={`Meja ${table} (Terkunci via Scan QR)`}
+      <button
+        type="button"
+        onClick={openScanner}
+        className={`inline-flex items-center gap-1 rounded-full bg-primary text-white text-xs font-bold px-2.5 py-1 hover:bg-primary-dark transition-all active:scale-95 shadow-xs ${className}`}
+        aria-label={`Meja ${table} terverifikasi QR — klik untuk scan ulang QR meja`}
+        title={`Meja ${table} (Terverifikasi QR). Klik untuk scan QR meja lain jika pindah meja`}
       >
         <span className="material-symbols-outlined text-[14px]">table_restaurant</span>
         <span>Meja {table}</span>
         <span className="material-symbols-outlined text-[12px] opacity-85">lock</span>
-      </div>
+      </button>
     )
   }
 

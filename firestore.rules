@@ -86,5 +86,15 @@ service cloud.firestore {
     match /counters/{id} {
       allow read, write: if isStaff();
     }
+
+    // Daftar meja & hash token QR (dikelola oleh owner; validasi dilakukan backend via Admin SDK)
+    match /tables/{id} {
+      allow read, write: if isOwner();
+    }
+
+    // Sesi meja Dine-in (hanya dikelola oleh backend via Admin SDK)
+    match /tableSessions/{id} {
+      allow read, write: if false;
+    }
   }
 }

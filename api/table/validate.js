@@ -4,7 +4,7 @@ import crypto from 'node:crypto'
 import { getAdmin } from '../_lib/admin.js'
 import { normalizeTable } from '../../src/utils/table.js'
 
-const SESSION_TTL_MS = 4 * 60 * 60 * 1000 // 4 jam
+const SESSION_TTL_MS = 2 * 60 * 60 * 1000 // 2 jam
 const RATE_WINDOW_MS = 60 * 1000 // 1 menit
 const RATE_MAX_REQ = 30
 const rateBuckets = new Map()

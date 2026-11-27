@@ -355,8 +355,8 @@ export default function Checkout() {
                 </div>
                 {isLocked ? (
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
-                    <span className="material-symbols-outlined text-[13px]">lock</span>
-                    <span>Terkunci via QR</span>
+                    <span className="material-symbols-outlined text-[13px]">check_circle</span>
+                    <span>Dine-in</span>
                   </span>
                 ) : (
                   <button

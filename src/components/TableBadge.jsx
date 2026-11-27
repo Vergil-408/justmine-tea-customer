@@ -33,7 +33,6 @@ export default function TableBadge({ className = '' }) {
       >
         <span className="material-symbols-outlined text-[14px]">table_restaurant</span>
         <span>Meja {table}</span>
-        <span className="material-symbols-outlined text-[12px] opacity-85">lock</span>
       </button>
     )
   }

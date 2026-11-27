@@ -167,9 +167,17 @@ export default function Checkout() {
     }
     setSubmitting(true)
     try {
+      let fcmToken = null
+      try {
+        fcmToken = window.localStorage.getItem('justmine_fcm_token') || null
+      } catch {
+        /* abaikan */
+      }
+
       const result = await requestCreateOrder({
         items,
         tableSessionId: tableSessionId || null,
+        fcmToken,
         paymentMethod: 'qris',
         clientRequestId: requestIdRef.current,
         user,

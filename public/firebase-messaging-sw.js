@@ -18,16 +18,19 @@ const messaging = firebase.messaging()
 // Handler untuk push notification saat tab/browser TERTUTUP atau di background.
 // Notif ini muncul langsung di notification tray HP/desktop.
 messaging.onBackgroundMessage((payload) => {
-  const { title, body, icon, data } = payload.notification || {}
+  const data = payload.data || {}
+  const notif = payload.notification || {}
+  const title = data.title || notif.title || 'Justmine Tea'
+  const body = data.body || notif.body || 'Ada update pesananmu.'
 
-  self.registration.showNotification(title || 'Justmine Tea', {
-    body: body || 'Ada update pesananmu.',
-    icon: icon || '/icon.png',
+  self.registration.showNotification(title, {
+    body,
+    icon: notif.icon || '/icon.png',
     badge: '/icon.png',
-    tag: data?.orderId || 'justmine-notif', // tag sama = replace notif lama
+    tag: data.orderId || 'justmine-notif', // tag sama = replace notif lama
     renotify: true,
     vibrate: [200, 100, 200],
-    data: data || {},
+    data,
     actions: [
       { action: 'track', title: 'Lihat Pesanan' },
       { action: 'dismiss', title: 'Tutup' },

@@ -146,12 +146,16 @@ export default async function handler(req, res) {
     const total = Math.max(0, subtotal - discount)
     const pointsEarned = Math.floor(total / 1000)
 
+    const rawFcmToken = typeof body.fcmToken === 'string' ? body.fcmToken.trim() : ''
+    const fcmToken = rawFcmToken && rawFcmToken.length <= 512 ? rawFcmToken : null
+
     const result = await createOrderTx(db, {
       clientRequestId,
       dateKey: jakartaDateKey(),
       serverTimestamp: FieldValue.serverTimestamp(),
       buildOrder: () => ({
         userId,
+        fcmToken,
         customerName,
         tableNumber,
         orderType,

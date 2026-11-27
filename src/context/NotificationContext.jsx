@@ -148,14 +148,14 @@ export function NotificationProvider({ children }) {
   }, [])
   useEffect(() => { saveNotifications(items) }, [items])
 
-  // Daftar Web Push FCM saat user login.
-  // Izin diminta sekali setelah interaksi pertama (browser block Notification tanpa gesture).
+  // Daftar Web Push FCM untuk member & guest (jika izin sudah granted atau user login).
   useEffect(() => {
-    if (loading || !user) return
-    // Delay sedikit agar tidak mengganggu UX di awal halaman
+    if (loading) return
+    const alreadyGranted = typeof Notification !== 'undefined' && Notification.permission === 'granted'
+    if (!user && !alreadyGranted) return
     const t = setTimeout(() => {
-      registerPushToken(user.uid).catch(() => {})
-    }, 3000)
+      registerPushToken(user?.uid || null).catch(() => {})
+    }, 2000)
     return () => clearTimeout(t)
   }, [user, loading])
 

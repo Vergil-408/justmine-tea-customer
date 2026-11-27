@@ -50,11 +50,13 @@ export default function TableScannerModal() {
 
   const scannerRef = useRef(null)
   const isStoppingRef = useRef(false)
+  const isProcessingRef = useRef(false)
   const fileInputRef = useRef(null)
 
   // Reset state saat modal dibuka
   useEffect(() => {
     if (isScannerOpen) {
+      isProcessingRef.current = false
       setErrorMsg('')
       setSuccessTable('')
       setCameraPermissionError(false)
@@ -194,21 +196,29 @@ export default function TableScannerModal() {
   }
 
   async function handleScanSuccess(rawResult) {
-    const parsed = parseQrPayloadFromScan(rawResult)
-    if (!parsed) {
-      setErrorMsg('QR tidak valid atau tidak memiliki token resmi meja.')
-      return
-    }
-    stopScanner()
-    const res = await validateQrPayload(parsed)
-    if (res.valid) {
-      setSuccessTable(res.tableNumber)
-      setErrorMsg('')
-      setTimeout(() => {
-        closeScanner()
-      }, 1400)
-    } else {
-      setErrorMsg(res.error || 'QR meja ditolak oleh server.')
+    if (isProcessingRef.current) return
+    isProcessingRef.current = true
+    try {
+      const parsed = parseQrPayloadFromScan(rawResult)
+      if (!parsed) {
+        setErrorMsg('QR tidak valid atau tidak memiliki token resmi meja.')
+        setTimeout(() => { isProcessingRef.current = false }, 1200)
+        return
+      }
+      stopScanner()
+      const res = await validateQrPayload(parsed)
+      if (res.valid) {
+        setSuccessTable(res.tableNumber)
+        setErrorMsg('')
+        setTimeout(() => {
+          closeScanner()
+        }, 1200)
+      } else {
+        setErrorMsg(res.error || 'QR meja ditolak oleh server.')
+        isProcessingRef.current = false
+      }
+    } catch {
+      isProcessingRef.current = false
     }
   }
 

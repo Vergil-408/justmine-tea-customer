@@ -62,6 +62,11 @@ export function TableProvider({ children }) {
         body: JSON.stringify({ table: rawTable, token }),
       })
       const data = await res.json().catch(() => ({}))
+      if (res.status === 429) {
+        const msg = data.error || 'Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.'
+        setTableError(msg)
+        return { valid: false, error: msg }
+      }
       if (!res.ok || !data.valid || !data.sessionId || !data.tableNumber) {
         clearTable()
         const msg = data.error || 'QR meja tidak valid atau sudah tidak aktif.'

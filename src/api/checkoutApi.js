@@ -21,7 +21,7 @@ async function postJson(path, payload, headers = {}) {
  * @param {{ items: Array, tableNumber: string, paymentMethod: 'qris'|'kasir', clientRequestId: string, user: object|null, customerName?: string, voucherDiscount?: number, voucherId?: string, voucherName?: string }} p
  * @returns {Promise<{ orderId, orderCode, total, paymentMethod, paymentStatus, qrUrl, expiresAt, sandbox }>}
  */
-export async function requestCreateOrder({ items, tableNumber, paymentMethod, clientRequestId, user, customerName, voucherDiscount, voucherId, voucherName }) {
+export async function requestCreateOrder({ items, tableNumber, tableSessionId, fcmToken, paymentMethod, clientRequestId, user, customerName, voucherDiscount, voucherId, voucherName }) {
   const headers = {}
 
   // Ambil Firebase IdToken secara aman tanpa risiko crash jika user bukan instance lengkap
@@ -51,6 +51,8 @@ export async function requestCreateOrder({ items, tableNumber, paymentMethod, cl
         bundleSlots: i.bundleSlots || null,
       })),
       tableNumber,
+      tableSessionId: tableSessionId || null,
+      fcmToken: fcmToken || null,
       paymentMethod,
       clientRequestId,
       customerName: (customerName || user?.displayName || user?.email?.split('@')[0] || 'Pelanggan').trim(),

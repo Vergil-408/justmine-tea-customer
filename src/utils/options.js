@@ -256,17 +256,19 @@ export function getItemOptionLines(item) {
 
   const formatSugar = (text = '', id = '') => {
     const s = `${text} ${id}`.toLowerCase()
-    if (s.includes('no') || s.includes('0%') || s.includes('tanpa')) return 'No Sugar'
+    if (s.includes('normal') || s.includes('100%')) return 'Normal Sugar'
     if (s.includes('less') || s.includes('50%') || s.includes('sedikit')) return 'Less Sugar'
-    if (s.includes('normal') || s.includes('100%') || s.includes('gula')) return 'Normal Sugar'
+    if (/\bno\b/.test(s) || s.includes('0%') || s.includes('tanpa')) return 'No Sugar'
+    if (s.includes('gula')) return 'Normal Sugar'
     return text || 'Normal Sugar'
   }
 
   const formatIce = (text = '', id = '') => {
     const s = `${text} ${id}`.toLowerCase()
-    if (s.includes('no') || s.includes('tanpa')) return 'No Ice'
+    if (s.includes('normal')) return 'Normal Ice'
     if (s.includes('less') || s.includes('sedikit')) return 'Less Ice'
-    if (s.includes('normal') || s.includes('es')) return 'Normal Ice'
+    if (/\bno\b/.test(s) || s.includes('tanpa')) return 'No Ice'
+    if (s.includes('es')) return 'Normal Ice'
     return text || 'Normal Ice'
   }
 
